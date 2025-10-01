@@ -1,24 +1,41 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Tabs>
+      <Tabs.Screen 
+      name="index" 
+      options={{ 
+        title: "Mapa", 
+        tabBarIcon: ({ color, size }) => (
+            <FontAwesome5 name="map-marked-alt" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen 
+      name="camera" 
+      options={{ 
+        title: "Escanear un QR", 
+        tabBarIcon: ({ color, size }) => (
+            <FontAwesome5 name="qrcode" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen 
+      name="home" 
+      options={{ 
+        title: "Home", 
+        tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="home" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
+
+/*<Stack>
+        <Stack.Screen name="index"/>
+      </Stack>
+*/
