@@ -23,6 +23,7 @@ model Usuario {
 
 model Restaurante {
   id_restaurante Int    @id @default(autoincrement())
+  nombre_restaurante  String?
   descripcion    String
   link_menu      String?
   ubicacion      String?
