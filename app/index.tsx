@@ -41,7 +41,7 @@ export default function Map() {
 
   // restaurantes filtrados por título
   const filtrados = productos.filter(p =>
-    p.titulo.toLowerCase().includes(filtro.toLowerCase())
+    p.titulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").startsWith(filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
   );
 
   // function toggleFavorito(id: string) {
