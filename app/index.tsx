@@ -1,47 +1,45 @@
-import { useState } from "react";
-import { FlatList, Image, ImageBackground, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useCallback, useState } from "react";
+import { FlatList, Image, ImageBackground, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { WebView } from "react-native-webview";
 
-type Restaurante = {
+import { useFocusEffect } from "expo-router";
+import { API_URL } from './config';
+
+type Restaurant = {
   id: number;
-  titulo: string;
-  precio: string;
-  descripcion: string;
-  imagen: any;
+  restaurant_name: string;
+  description: string;
+  menu_link: string;
+  location: string;
 };
-
-const productos: Restaurante[] = [
-  {
-    id: 1,
-    titulo: "McDonald's",
-    precio: "$",
-    descripcion: "BUrgas",
-    imagen: { uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/McDonald%27s_logo.svg/250px-McDonald%27s_logo.svg.png"},
-  },  
-  {
-    id: 2,
-    titulo: "Los Pumas Café",
-    precio: "$$$$$$$$$$$$$$",
-    descripcion: "AAAAAAAAAAAAAAAAAAAAAAAHHH",
-    imagen: { uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSE5iRLFcMH-8t7AKZgcofAIDbcHP9OgKXJzw&s" },
-  },
-  {
-    id: 3,
-    titulo: "Philadelphia Kirkhouse",
-    precio: "$$$",
-    descripcion: "Counting or not counting gang violence?",
-    imagen: { uri: "https://katu.com/resources/media2/1x1/1040/1440/405x0/90/d0649613-6462-4dc2-8610-7c73e28e2459-immingration.png" },
-  },
-];
 
 export default function Map() {
   const [filtro, setFiltro] = useState("");
+  const [menu_link, setMenu_link] = useState<string | null>(null);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   // const [seleccionado, setSeleccionado] = useState<Producto | null>(null);
   // const [resizeMode, setResizeMode] = useState<"cover" | "contain" | "stretch">("cover");
   // const [favoritos, setFavoritos] = useState<string[]>([]);
 
+  useFocusEffect(
+    useCallback(() => {
+      async function fetchRestaurants() {
+        try {
+          const response = await fetch(`${API_URL}/restaurants`);
+          const data = await response.json();
+          setRestaurants(data);
+        } catch (err) {
+          console.error("Error fetching restaurants:", err);
+        }
+      }
+
+      fetchRestaurants();
+    }, [])
+  );
+
   // restaurantes filtrados por título
-  const filtrados = productos.filter(p =>
-    p.titulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+  const filtrados = restaurants.filter(r =>
+    r.restaurant_name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
   );
 
   // function toggleFavorito(id: string) {
@@ -51,44 +49,86 @@ export default function Map() {
   // }
 
   return (
-    <ImageBackground
-      source={{ uri: "https://media.wired.com/photos/59269cd37034dc5f91bec0f1/191:100/w_1280,c_limit/GoogleMapTA.jpg?mbid=social_retweet"}}
-      style={styles.backgroundStyles}
-      resizeMode="cover"
-    >
-      <View style={styles.containerStyles}>
-        <TextInput
-          style={styles.inputStyle}
-          placeholderTextColor="grey"
-          placeholder="Buscar restaurante..."
-          value={filtro}
-          onChangeText={setFiltro}
-          clearButtonMode="while-editing"
-        />
-
-        {filtro.length > 0 && (
-          <FlatList
-            style={styles.listStyles}
-            data={filtrados}
-            renderItem={({ item }) => {
-              return (
-                <Pressable
-                  style={styles.itemStyles}
-                  //onPress={() => setSeleccionado(item)}
-                  //onLongPress={() => toggleFavorito(item.id)}
-                >
-                  <Image source={item.imagen} style={styles.imageStyles} resizeMode="contain" />
-                  <View>
-                    <Text style={styles.textStyle}>{item.titulo}</Text>
-                    <Text>{item.precio}</Text>
-                  </View>
-                </Pressable>
-              );
-            }}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ImageBackground
+        source={{ uri: "https://media.wired.com/photos/59269cd37034dc5f91bec0f1/191:100/w_1280,c_limit/GoogleMapTA.jpg?mbid=social_retweet"}}
+        style={styles.backgroundStyles}
+        resizeMode="cover"
+      >
+        <View style={styles.containerStyles}>
+          <TextInput
+            style={styles.inputStyle}
+            placeholderTextColor="grey"
+            placeholder="Buscar restaurante..."
+            autoCorrect={false}         
+            spellCheck={false}    
+            value={filtro}
+            onChangeText={setFiltro}
+            clearButtonMode="while-editing"
           />
-        )}
-      </View>
-    </ImageBackground>
+
+          {filtro.length > 0 && (
+            <FlatList
+              style={styles.listStyles}
+              data={filtrados}
+              renderItem={({ item }) => {
+                return (
+                  <Pressable
+                    style={styles.itemStyles}
+                    onPress={() => setMenu_link(item.menu_link)}
+                    //onLongPress={() => toggleFavorito(item.id)}
+                  >
+                    <Image source={require("../assets/images/restaurant_placeholder.png")} style={styles.imageStyles} resizeMode="contain" />
+                    <View>
+                      <Text style={styles.textStyle}>{item.restaurant_name}</Text>
+                      <Text>{item.description}</Text>
+                    </View>
+                  </Pressable>
+                );
+              }}
+            />
+          )}
+
+          <Modal visible={menu_link !== null} transparent animationType="fade">
+            <Pressable
+              onPress={() => setMenu_link(null)} // closes modal on tap outside
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0, 0, 0, 0.6)",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Pressable style={{ width: "90%", height: "80%", borderRadius: 10, overflow: "hidden" }} onPress={() => {}}>
+                {Platform.OS === "web" ? (
+                    <>
+                      {menu_link && (
+                        <iframe
+                          src={menu_link}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            border: "none",
+                          }}
+                        />
+                      )}
+                    </>
+                  ):(
+                    <>
+                      {menu_link && (
+                        <WebView
+                          source={{ uri: menu_link }}
+                          style={{ flex: 1 }}
+                        />
+                      )}
+                    </>
+                  )}
+              </Pressable>
+            </Pressable>
+          </Modal>
+        </View>
+      </ImageBackground>
+    </TouchableWithoutFeedback>
   );
 };
 

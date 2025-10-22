@@ -1,7 +1,9 @@
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import { useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Keyboard, Modal, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+
+import { API_URL } from './config';
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -9,6 +11,11 @@ export default function App() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [scanned, setScanned] = useState(false);
   const [seleccionado, setSeleccionado] = useState<string | null>(null);
+
+  const [restaurant_name, setRestaurant_name] = useState("");
+  const [description, setDescription] = useState("");
+  const [menu_link, setMenu_link] = useState("");
+  const [location, setLocation] = useState(""); 
 
   // Quisimos pero no pudimos que el permiso te lo pida al entrar por primera vez a la pestaña, y q el boton 
   // solo aparezca si en esa le denegaste permiso
@@ -35,46 +42,102 @@ export default function App() {
     if (scanned) return;
     setScanned(true);
     console.log(`Scanned ${type}: ${data}`);
+    setMenu_link(data);
     setSeleccionado(data);
+  };
+
+  const handleAddRestaurant = async () => {
+    try {
+      const newRestaurant = { restaurant_name, description, menu_link, location };
+
+      const response = await fetch(`${API_URL}/restaurants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRestaurant),
+      });
+
+      const data = await response.json();
+      console.log("Successfully added restaurant:", data);
+
+      // limpiar form
+      setRestaurant_name("");
+      setDescription("");
+      setMenu_link("");
+      setLocation("");
+
+      // cerrar modal y dejar scanear de nuevo
+      setSeleccionado(null);
+      setScanned(false);
+
+    } catch (error) {
+      console.error("Error when trying to add new restaurant:", error);
+    }
   };
 
   const renderCamera = () => {
     return (
-      <View style={styles.cameraContainer}>
-        <CameraView
-          style={styles.camera}
-          ref={ref}
-          facing={facing}
-          responsiveOrientationWhenOrientationLocked
-          onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"], 
-          }}
-        />
-        <View style={styles.shutterContainer}>
-          <Pressable style={styles.flipBtn} onPress={toggleFacing}>
-            <FontAwesome6 name="rotate-left" size={32} color="white" />
-          </Pressable>
-        </View>
-
-        <Modal visible={seleccionado !== null} transparent={true}>
-          <View style={styles.modalBackgroundStyles}>
-            <View style={styles.containerStyles}>
-              {seleccionado ?
-                <>  
-                  <View style={styles.textBackgroundStyle}>
-                    <Text>{seleccionado}</Text>
-                  </View>
-  
-                  <Pressable style={styles.cancelButtonStyles} onPress={() => {setSeleccionado(null); setScanned(false)}}>
-                    <Text style={styles.buttonTextStyle}>Cerrar</Text>
-                  </Pressable>
-                </>
-                : null}
-            </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.cameraContainer}>
+          <CameraView
+            style={styles.camera}
+            ref={ref}
+            facing={facing}
+            responsiveOrientationWhenOrientationLocked
+            onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
+            barcodeScannerSettings={{
+              barcodeTypes: ["qr"], 
+            }}
+          />
+          <View style={styles.shutterContainer}>
+            <Pressable style={styles.flipBtn} onPress={toggleFacing}>
+              <FontAwesome6 name="rotate-left" size={32} color="white" />
+            </Pressable>
           </View>
-        </Modal>
-      </View>
+
+          <Modal visible={seleccionado !== null} transparent={false}>
+            <View style={styles.modalBackgroundStyles}>
+              <View style={styles.containerStyles}>
+                {seleccionado ?
+                  <>  
+                    <View style={styles.textBackgroundStyle}>
+                      <Text>{seleccionado}</Text>
+                    </View>
+
+                    <TextInput
+                      placeholder="Restaurant name..."
+                      value={restaurant_name}
+                      onChangeText={setRestaurant_name}
+                      autoCorrect={false}         
+                      spellCheck={false}  
+                      style={styles.inputStyle}
+                    />
+                    <TextInput
+                      placeholder="Description..."
+                      value={description}
+                      onChangeText={setDescription}
+                      style={styles.inputStyle}
+                    />
+                    <TextInput
+                      placeholder="Location..."
+                      value={location}
+                      onChangeText={setLocation}
+                      style={styles.inputStyle}
+                    />
+
+                    <Pressable style={styles.buttonStyles} onPress={handleAddRestaurant}>
+                      <Text style={styles.buttonTextStyle}>Add Restaurant</Text>
+                    </Pressable>
+    
+                    <Pressable style={styles.cancelButtonStyles} onPress={() => {setSeleccionado(null); setScanned(false)}}>
+                      <Text style={styles.buttonTextStyle}>Cancel</Text>
+                    </Pressable>
+                  </>
+                  : null}
+              </View>
+            </View>
+          </Modal>
+        </View>
+      </TouchableWithoutFeedback>
     );
   };
 
@@ -190,5 +253,6 @@ const styles = StyleSheet.create({
     margin: 10,
     borderBlockColor: "black",
     borderWidth: 2
-  }
+  },
+
 });
