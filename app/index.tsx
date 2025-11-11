@@ -20,7 +20,7 @@ type Restaurant = {
 };
 
 // Región con accuracy opcional (para el círculo)
-type RegionWithAccuracy = Region & { accuracy?: number };
+type RegionWithAccuracy = Region & { accuracy?: number | null }; 
 
 export default function Map() {
   // --- estado existente tuyo (filtro, modal, restaurantes, etc.) ---
@@ -48,9 +48,9 @@ export default function Map() {
         longitude: loc.coords.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-        accuracy: loc.coords.accuracy,
+        accuracy: loc.coords.accuracy, // ahora coincide con el tipo
       });
-    })();
+    })();   
   }, []);
 
   // 2) tu fetch de restaurantes (igual que antes)
@@ -117,7 +117,7 @@ export default function Map() {
           {region.accuracy !== undefined && (
             <Circle
               center={{ latitude: region.latitude, longitude: region.longitude }}
-              radius={Math.max(region.accuracy, 25)}
+              radius={Math.max(region.accuracy ?? 25, 25)} // maneja null/undefined
               fillColor="rgba(0,122,255,0.15)"
               strokeColor="rgba(0,122,255,0.6)"
               strokeWidth={2}

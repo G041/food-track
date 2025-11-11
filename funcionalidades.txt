@@ -1,7 +1,8 @@
 Prioridad
-- Map initial region = region actual celular
-- (HECHO) fetchear a la db coords restaurantes y poner markers 
-- (HECHO) al hacer submit de un resto, guardar como ubicacion la actual del celular
+- (HECHO) Map initial region = region actual celular
+- (HECHO) Fetchear a la db coords restaurantes y poner markers 
+- (HECHO) Al hacer submit de un resto, guardar como ubicacion la actual del celular
+- (HECHO) Boton centrar mapa a la starting region
 - hacer el login
     - sesion con async storage y secure store
 
