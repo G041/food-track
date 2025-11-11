@@ -6,6 +6,7 @@ Prioridad
 - hacer el login
     - sesion con async storage y secure store
 
+
 Secundario
     - filtros 
         - por categoria (descripcion) resto
@@ -19,3 +20,4 @@ eas build -p ios //para armar la aplicacion en la nube
 pelotudeces:
     envolver la caja de texto que popea al apretar un marker con el boton que abre el web view, cosa que sea mas facil de abrir el menu del resto
     hacer que el menu se abra una vez esta abierto el pop con nombre / descripcion del lugar que tira el marker y no directamente en la primera vez que se toca, seria como tocarlo dos veces para que tire recien ahi el menu
+    estaria bastante zarpado que al clickear algun restaurante que buscaste por nombre en la lista con filter, que ademas de llevarte al menu te desplace hacia la ubicacion del restaurante que seleccionaste para que tenga cierta correlacion logica
