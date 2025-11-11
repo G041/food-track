@@ -1,9 +1,14 @@
 import { useCallback, useState } from "react";
-import { FlatList, Image, ImageBackground, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { FlatList, Image, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import { WebView } from "react-native-webview";
 
 import { useFocusEffect } from "expo-router";
+//import Mapa from "./mapa"; // <--- IMPORTANTE: ruta correcta
+import MapView from "react-native-maps"; //mapa
+
+
 import { API_URL } from './config';
+
 
 type Restaurant = {
   id: number;
@@ -12,6 +17,29 @@ type Restaurant = {
   menu_link: string;
   location: string;
 };
+
+/*
+export function Index() {
+  return (
+    <View style={styles.container}>
+      <Mapa />
+    </View>
+  );
+}
+*/
+export function Mapa() {
+  return (
+    <MapView
+      style={styles.map}
+      initialRegion={{
+        latitude: -34.6037,     // ejemplo: Buenos Aires
+        longitude: -58.3816,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      }}
+    />
+  );
+}
 
 export default function Map() {
   const [filtro, setFiltro] = useState("");
@@ -49,87 +77,90 @@ export default function Map() {
   // }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <ImageBackground
-        source={{ uri: "https://media.wired.com/photos/59269cd37034dc5f91bec0f1/191:100/w_1280,c_limit/GoogleMapTA.jpg?mbid=social_retweet"}}
-        style={styles.backgroundStyles}
-        resizeMode="cover"
-      >
-        <View style={styles.containerStyles}>
-          <TextInput
-            style={styles.inputStyle}
-            placeholderTextColor="grey"
-            placeholder="Buscar restaurante..."
-            autoCorrect={false}         
-            spellCheck={false}    
-            value={filtro}
-            onChangeText={setFiltro}
-            clearButtonMode="while-editing"
-          />
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <View style={styles.container}>
+      
+      {/* Mapa de fondo */}
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: -34.4718,   // Centro San Isidro
+          longitude: -58.5162,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+      />
 
-          {filtro.length > 0 && (
-            <FlatList
-              style={styles.listStyles}
-              data={filtrados}
-              renderItem={({ item }) => {
-                return (
-                  <Pressable
-                    style={styles.itemStyles}
-                    onPress={() => setMenu_link(item.menu_link)}
-                    //onLongPress={() => toggleFavorito(item.id)}
-                  >
-                    <Image source={require("../assets/images/restaurant_placeholder.png")} style={styles.imageStyles} resizeMode="contain" />
-                    <View>
-                      <Text style={styles.textStyle}>{item.restaurant_name}</Text>
-                      <Text>{item.description}</Text>
-                    </View>
-                  </Pressable>
-                );
-              }}
-            />
-          )}
+      {/* Contenido superpuesto arriba del mapa */}
+      <View style={styles.overlay}>
+        <TextInput
+          style={styles.inputStyle}
+          placeholderTextColor="grey"
+          placeholder="Buscar restaurante..."
+          value={filtro}
+          onChangeText={setFiltro}
+        />
 
-          <Modal visible={menu_link !== null} transparent animationType="fade">
-            <Pressable
-              onPress={() => setMenu_link(null)} // closes modal on tap outside
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0, 0, 0, 0.6)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Pressable style={{ width: "90%", height: "80%", borderRadius: 10, overflow: "hidden" }} onPress={() => {}}>
-                {Platform.OS === "web" ? (
-                    <>
-                      {menu_link && (
-                        <iframe
-                          src={menu_link}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            border: "none",
-                          }}
-                        />
-                      )}
-                    </>
-                  ):(
-                    <>
-                      {menu_link && (
-                        <WebView
-                          source={{ uri: menu_link }}
-                          style={{ flex: 1 }}
-                        />
-                      )}
-                    </>
-                  )}
+        {filtro.length > 0 && (
+          <FlatList
+            style={styles.listStyles}
+            data={filtrados}
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.itemStyles}
+                onPress={() => setMenu_link(item.menu_link)}
+              >
+                <Image source={require("../assets/images/restaurant_placeholder.png")} style={styles.imageStyles} />
+                <View>
+                  <Text style={styles.textStyle}>{item.restaurant_name}</Text>
+                  <Text>{item.description}</Text>
+                </View>
               </Pressable>
-            </Pressable>
-          </Modal>
-        </View>
-      </ImageBackground>
-    </TouchableWithoutFeedback>
-  );
+            )}
+          />
+        )}
+      </View>
+
+      {/* Modal Menú */}
+      <Modal visible={menu_link !== null} transparent animationType="fade">
+        <Pressable
+          onPress={() => setMenu_link(null)}
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Pressable style={{ width: "90%", height: "80%", borderRadius: 10, overflow: "hidden" }} onPress={() => {}}>
+            {Platform.OS === "web" ? (
+              <>
+                {menu_link && (
+                  <iframe
+                    src={menu_link}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      border: "none",
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                {menu_link && (
+                  <WebView source={{ uri: menu_link }} style={{ flex: 1 }} />
+                )}
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+    </View>
+  </TouchableWithoutFeedback>
+);
+
 };
 
 const styles = StyleSheet.create({
@@ -139,6 +170,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%"
   },
+
+  container: {  //para el mapa
+    flex: 1,
+  },
+  map: {
+    flex: 1,  //para el mapa
+  },
+  overlay: {
+  position: "absolute",
+  top: 0,              // antes era 40
+  width: "100%",
+  //backgroundColor: "rgba(255, 255, 255, 0.7)", // leve fondo para que no se mezcle con el mapa
+  paddingVertical: 10,
+  paddingHorizontal: 15,
+},
 
   textStyle: {
     textAlign: "center",
@@ -153,17 +199,21 @@ const styles = StyleSheet.create({
   },
 
   inputStyle: {
-    color: "black",
-    borderWidth: 1,
-    borderColor: "gray",
-    padding: 10,
-    width: "90%",
-    height: "10%",
-    fontSize: 20,
-    marginVertical: 10,
-    borderRadius: 5,
-    backgroundColor: "rgba(255, 255, 255, 0.19)",
-  },
+  color: "black",
+  backgroundColor: "white",
+  borderRadius: 12,
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  fontSize: 18,
+  width: "100%",
+  borderWidth: 0,
+  elevation: 3, // sombra Android
+  shadowColor: "#000",
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  shadowOffset: { width: 0, height: 2 }, // sombra iOS
+},
+
 
   buttonStyles: {
     backgroundColor: "rebeccapurple",
