@@ -195,7 +195,7 @@ export default function Map() {
               alignItems: "center",
             }}
           >
-            <Pressable style={{ width: "90%", height: "80%", borderRadius: 10, overflow: "hidden" }}>
+            <Pressable style={{ width: "95%", height: "85%", borderRadius: 10, overflow: "hidden" }}>
               {Platform.OS === "web" ? (
                 menu_link && (
                   <iframe
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     paddingRight: 36, // espacio para la X
     fontSize: 18,
     width: "100%",
-    marginTop: "10%",
+    marginTop: "11%",
   },
    locationButton: {  //boton para el mapa
     position: "absolute",
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  clearButton: { position: "absolute", right: 10, padding: 6, marginTop: "10%" },
+  clearButton: { position: "absolute", right: 9, padding: 6, marginTop: "11%" },
   clearButtonText: { fontSize: 18, color: "black" },
 
   listStyles: { width: "100%", marginTop: 8 },
