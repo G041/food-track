@@ -239,6 +239,7 @@ const styles = StyleSheet.create({
     paddingRight: 36, // espacio para la X
     fontSize: 18,
     width: "100%",
+    marginTop: "10%",
   },
    locationButton: {  //boton para el mapa
     position: "absolute",
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  clearButton: { position: "absolute", right: 20, padding: 6 },
+  clearButton: { position: "absolute", right: 10, padding: 6, marginTop: "10%" },
   clearButtonText: { fontSize: 18, color: "black" },
 
   listStyles: { width: "100%", marginTop: 8 },
