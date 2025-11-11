@@ -3,6 +3,10 @@ import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import { useRef, useState } from "react";
 import { Keyboard, Modal, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 
+import * as Location from "expo-location"; //location save on submit
+import { Alert } from "react-native"; //location save on submit
+
+
 import { API_URL } from './config';
 
 export default function App() {
@@ -16,6 +20,9 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [menu_link, setMenu_link] = useState("");
   const [location, setLocation] = useState(""); 
+
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null); //location save on submit
+
 
   // Quisimos pero no pudimos que el permiso te lo pida al entrar por primera vez a la pestaña, y q el boton 
   // solo aparezca si en esa le denegaste permiso
@@ -38,41 +45,56 @@ export default function App() {
     setFacing((prev) => (prev === "back" ? "front" : "back"));
   };
 
-  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
-    if (scanned) return;
-    setScanned(true);
-    console.log(`Scanned ${type}: ${data}`);
-    setMenu_link(data);
-    setSeleccionado(data);
-  };
+  const handleBarcodeScanned = async ({ type, data }: { type: string; data: string }) => {
+  if (scanned) return;
+  setScanned(true);
+  console.log(`Scanned ${type}: ${data}`);
+  setMenu_link(data);
+  setSeleccionado(data);
+
+  // Ask for location & read it
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("Location permission denied", "You can still fill the form, but coordinates won't be saved.");
+    setCoords(null);
+    return;
+  }
+  const pos = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Balanced,
+  });
+  setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+};
+
 
   const handleAddRestaurant = async () => {
-    try {
-      const newRestaurant = { restaurant_name, description, menu_link, location };
+  try {
+    const newRestaurant = {
+      restaurant_name,
+      description,
+      menu_link,
+      location,                      // keep if you still want a human-readable address
+      latitude: coords?.latitude ?? null,
+      longitude: coords?.longitude ?? null,
+    };
 
-      const response = await fetch(`${API_URL}/restaurants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newRestaurant),
-      });
+    const response = await fetch(`${API_URL}/restaurants`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newRestaurant),
+    });
 
-      const data = await response.json();
-      console.log("Successfully added restaurant:", data);
+    const data = await response.json();
+    console.log("Successfully added restaurant:", data);
 
-      // limpiar form
-      setRestaurant_name("");
-      setDescription("");
-      setMenu_link("");
-      setLocation("");
+    // reset
+    setRestaurant_name(""); setDescription(""); setMenu_link(""); setLocation("");
+    setCoords(null);
+    setSeleccionado(null); setScanned(false);
+  } catch (error) {
+    console.error("Error when trying to add new restaurant:", error);
+  }
+};
 
-      // cerrar modal y dejar scanear de nuevo
-      setSeleccionado(null);
-      setScanned(false);
-
-    } catch (error) {
-      console.error("Error when trying to add new restaurant:", error);
-    }
-  };
 
   const renderCamera = () => {
     return (

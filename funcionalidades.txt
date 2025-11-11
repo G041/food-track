@@ -1,7 +1,7 @@
 Prioridad
 - Map initial region = region actual celular
-- fetchear a la db coords restaurantes y poner markers 
-- al hacer submit de un resto, guardar como ubicacion la actual del celular
+- (HECHO) fetchear a la db coords restaurantes y poner markers 
+- (HECHO) al hacer submit de un resto, guardar como ubicacion la actual del celular
 - hacer el login
     - sesion con async storage y secure store
 
@@ -9,3 +9,12 @@ Secundario
     - filtros 
         - por categoria (descripcion) resto
     - esconder POI (Points of Interest) (opcional _?)
+
+
+npx expo prebuild //para armar y poder usar react iOS map
+eas build -p ios //para armar la aplicacion en la nube
+
+
+pelotudeces:
+    envolver la caja de texto que popea al apretar un marker con el boton que abre el web view, cosa que sea mas facil de abrir el menu del resto
+    hacer que el menu se abra una vez esta abierto el pop con nombre / descripcion del lugar que tira el marker y no directamente en la primera vez que se toca, seria como tocarlo dos veces para que tire recien ahi el menu
