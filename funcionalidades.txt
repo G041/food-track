@@ -1,0 +1,11 @@
+Prioridad
+- Map initial region = region actual celular
+- fetchear a la db coords restaurantes y poner markers 
+- al hacer submit de un resto, guardar como ubicacion la actual del celular
+- hacer el login
+    - sesion con async storage y secure store
+
+Secundario
+    - filtros 
+        - por categoria (descripcion) resto
+    - esconder POI (Points of Interest) (opcional _?)
