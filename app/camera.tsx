@@ -1,6 +1,7 @@
 import { AppDispatch, RootState } from "@/store";
 import { addRestaurantThunk } from "@/store/restaurantsSlice";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { Picker } from "@react-native-picker/picker";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
@@ -33,6 +34,8 @@ export default function App() {
   const [menu_link, setMenu_link] = useState("");
   const [location, setLocation] = useState("");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const [showPicker, setShowPicker] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -108,6 +111,8 @@ export default function App() {
     }
   };
 
+  
+
   const renderCamera = () => (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.cameraContainer}>
@@ -144,13 +149,42 @@ export default function App() {
                     style={styles.input}
                     placeholderTextColor="#aaa"
                   />
-                  <TextInput
-                    placeholder="Description..."
-                    value={description}
-                    onChangeText={setDescription}
+                  <Pressable
+                    onPress={() => setShowPicker(true)}
                     style={styles.input}
-                    placeholderTextColor="#aaa"
-                  />
+                  >
+                    <Text style={{ color: description ? "white" : "#aaa", fontSize: 16 }}>
+                      {description || "Selecciona una categoria..."}
+                    </Text>
+                  </Pressable>
+
+                  {/* Modal que muestra el Picker */}
+                  <Modal
+                    visible={showPicker}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setShowPicker(false)}
+                  >
+                    <View style={styles.modalOverlay}>
+                      <View style={styles.pickerModal}>
+                        <Picker
+                          selectedValue={description}
+                          onValueChange={(val) => {
+                            setDescription(val);
+                            setShowPicker(false); // cerrar al elegir
+                          }}
+                          style={styles.picker}
+                          dropdownIconColor="#fff"
+                        >
+                          <Picker.Item label="Merienda" value="Merienda" />
+                          <Picker.Item label="Bodegon" value="Bodegon" />
+                          <Picker.Item label="Restaurante" value="Restaurante" />
+                          <Picker.Item label="Bar" value="Bar" />
+                          <Picker.Item label="Comida Rápida" value="Comida Rapida" />
+                        </Picker>
+                      </View>
+                    </View>
+                  </Modal>
                   <TextInput
                     placeholder="Location..."
                     value={location}
@@ -309,4 +343,36 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
+  pickerContainer: {
+  backgroundColor: "#188FD9",
+  borderColor: "#1EA4D9",
+  borderWidth: 1,
+  borderRadius: 8,
+  width: "85%",
+  marginVertical: 8,
+  // para que coincida con el alto del input
+  height: 50,
+  justifyContent: "center",
+},
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pickerModal: {
+    backgroundColor: "#188FD9",
+    borderRadius: 10,
+    borderColor: "#1EA4D9",
+    borderWidth: 1,
+    width: "85%",
+    padding: 10,
+  },
+  picker: {
+    color: "#fff",
+    height: 200,
+  },
+
+
 });
