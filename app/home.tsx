@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 
 import { API_URL } from '../utils/config';
 
@@ -28,12 +28,22 @@ function CreateModal() {
       });
 
       const data = await response.json();
-      console.log("Successfully logged in:", data);
 
+      if (!response.ok) {
+        // The server returned an error status (400, 404, 500, etc.)
+        console.error("Log in error:", data.error || "Unknown error");
+        Alert.alert("Signup failed", data.error || "Unknown error");
+        return; // stop execution
+      }
+
+      console.log("Successfully logged in:", data);
       // reset
       clearInputs();
+      setLogInModalVisible(false);
+      Alert.alert("Log in successful", "You can now upload QRs.");
     } catch (error) {
-      console.error("Error when trying to log in:", error);
+      console.error("Network or unexpected error:", error);
+      Alert.alert("Log in failed", "Network or unexpected error");
     }
   };
 
@@ -52,12 +62,22 @@ function CreateModal() {
       });
 
       const data = await response.json();
-      console.log("Successfully signed up:", data);
+      
+      if (!response.ok) {
+        // The server returned an error status (400, 404, 500, etc.)
+        console.error("Signup error:", data.error || "Unknown error");
+        Alert.alert("Signup failed", data.error || "Unknown error");
+        return; // stop execution
+      }
 
-      // reset
+      // Success
+      console.log("Successfully signed up:", data);
       clearInputs();
+      Alert.alert("Signup successful", "You can now log in.");
+      setSignUpModalVisible(false);
     } catch (error) {
-      console.error("Error when trying to sign up:", error);
+      console.error("Network or unexpected error:", error);
+      Alert.alert("Signup failed", "Network or unexpected error");
     }
   };
 
@@ -209,7 +229,7 @@ const styles = StyleSheet.create({
     color: "black",
     borderWidth: 1,
     borderColor: "gray",
-    padding: 10,
+    padding: 5,
     height: 60,
     width: "85%",
     fontSize: 20,
