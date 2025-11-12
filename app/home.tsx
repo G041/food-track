@@ -51,6 +51,7 @@ function CreateModal() {
 
       const data = await response.json();
 
+
       if (!response.ok) {
         // The server returned an error status (400, 404, 500, etc.)
         console.error("Log in error:", data.error || "Unknown error");
@@ -313,5 +314,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
 });
