@@ -8,17 +8,22 @@ export default function RootLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#400101",
-          borderTopColor: "#D9601A",
-          height: Platform.OS === "ios" ? 70 : 65,
-          paddingBottom: Platform.OS === "ios" ? 25 : 10,
+          backgroundColor: "#1C0526", // fondo oscuro profundo
+          borderTopColor: "#0D3973", // borde superior azul oscuro
+          height: Platform.OS === "ios" ? 80 : 70,
+          paddingBottom: Platform.OS === "ios" ? 22 : 10,
           paddingTop: 10,
+          shadowColor: "#116EBF",
+          shadowOpacity: 0.3,
+          shadowRadius: 6,
+          elevation: 5,
         },
-        tabBarActiveTintColor: "#F2A413",
-        tabBarInactiveTintColor: "#F28E13",
+        tabBarActiveTintColor: "#1EA4D9", // activo: azul brillante
+        tabBarInactiveTintColor: "#188FD9", // inactivo: celeste medio
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "600",
+          letterSpacing: 0.3,
         },
       }}
     >

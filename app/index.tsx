@@ -1,24 +1,14 @@
-import { Ionicons } from "@expo/vector-icons";
-import * as Location from "expo-location";
+import { Ionicons } from "@expo/vector-icons"; //para el boton que centra la ubicacion
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  FlatList,
-  Image,
-  Keyboard,
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
+import { FlatList, Image, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { WebView } from "react-native-webview";
+
+import * as Location from "expo-location";
 import type { Region } from "react-native-maps";
 import MapView, { Circle, Marker } from "react-native-maps";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
 
 import { API_URL } from "../utils/config";
 
@@ -27,22 +17,28 @@ type Restaurant = {
   restaurant_name: string;
   description: string;
   menu_link: string;
-  latitude: number;
+  latitude: number;   // por si vienen nulos en la primera migración
   longitude: number;
 };
 
-type RegionWithAccuracy = Region & { accuracy?: number | null };
+// Región con accuracy opcional (para el círculo)
+type RegionWithAccuracy = Region & { accuracy?: number | null }; 
 
 export default function Map() {
+  // --- estado existente tuyo (filtro, modal, restaurantes, etc.) ---
   const [filtro, setFiltro] = useState("");
   const [menu_link, setMenu_link] = useState<string | null>(null);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const mapRef = useRef<MapView>(null);
+
+  // --- NUEVO: región del usuario ---
   const [region, setRegion] = useState<RegionWithAccuracy | null>(null);
 
   const insets = useSafeAreaInsets();
-  const topOffset = insets.top + 10;
+  // topOffset ensures the overlay sits below the notch/status bar
+  const topOffset = insets.top + 10; // tweak +10 or +12 for spacing
 
+  // 1) pedir ubicación y setear initialRegion
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -58,11 +54,12 @@ export default function Map() {
         longitude: loc.coords.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-        accuracy: loc.coords.accuracy,
+        accuracy: loc.coords.accuracy, // ahora coincide con el tipo
       });
-    })();
+    })();   
   }, []);
 
+  // 2) tu fetch de restaurantes (igual que antes)
   useFocusEffect(
     useCallback(() => {
       async function fetchRestaurants() {
@@ -78,6 +75,7 @@ export default function Map() {
     }, [])
   );
 
+  // 3) filtrados (tu lógica)
   const filtrados = restaurants.filter((r) =>
     r.restaurant_name
       .toLowerCase()
@@ -89,53 +87,54 @@ export default function Map() {
   );
 
   const centerOnUser = () => {
-    if (!region || !mapRef.current) return;
-    mapRef.current.animateToRegion(
-      {
-        latitude: region.latitude,
-        longitude: region.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      },
-      500
-    );
-  };
+  if (!region || !mapRef.current) return;
 
-  if (!region) return <View style={{ flex: 1, backgroundColor: "#400101" }} />;
+  mapRef.current.animateToRegion(
+    {
+      latitude: region.latitude,
+      longitude: region.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    },
+    500 // duración animación en ms
+  );
+};
+
+  // Si aún no tengo region, podés mostrar un placeholder simple
+  if (!region) return <View style={{ flex: 1, backgroundColor: "#0b1523" }} />;
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.container}>
+      <View style={{ flex: 1 }}>
+        {/* MAPA */}
         {Platform.OS === "ios" ? (
           <MapView
             style={styles.map}
             initialRegion={region}
-            ref={mapRef}
+            ref = {mapRef}
             showsUserLocation
             showsPointsOfInterest={false}
             mapType="mutedStandard"
             compassOffset={{ x: -10, y: insets.top + 20 }}
           >
             <Pressable onPress={centerOnUser} style={styles.locationButton}>
-              <Ionicons name="locate" size={28} color="#400101" />
+              <Ionicons name="locate" size={28} color="black" />
             </Pressable>
-
+            {/* Círculo de precisión opcional */}
             {region.accuracy !== undefined && (
               <Circle
-                center={{
-                  latitude: region.latitude,
-                  longitude: region.longitude,
-                }}
-                radius={Math.max(region.accuracy ?? 25, 25)}
-                fillColor="rgba(217,96,26,0.15)"
-                strokeColor="#D9601A"
+                center={{ latitude: region.latitude, longitude: region.longitude }}
+                radius={Math.max(region.accuracy ?? 25, 25)} // maneja null/undefined
+                fillColor="rgba(0,122,255,0.15)"
+                strokeColor="rgba(0,122,255,0.6)"
                 strokeWidth={2}
               />
             )}
-
+            
+            {/* Markers de restaurantes (fork & knife si ya los pusiste) */}
             {restaurants
-              .filter((r) => r.latitude != null && r.longitude != null)
-              .map((r) => (
+              .filter(r => r.latitude != null && r.longitude != null) // <-- evita null
+              .map(r => (
                 <Marker
                   key={r.id_restaurant}
                   coordinate={{
@@ -144,24 +143,28 @@ export default function Map() {
                   }}
                   title={r.restaurant_name}
                   description={r.description}
-                  pinColor="#F28E13"
                   onPress={() => setMenu_link(r.menu_link)}
                 />
-              ))}
+              ))
+            }
+
           </MapView>
         ) : (
-          <View style={styles.unsupported}>
-            <Text style={{ color: "#F28E13" }}>
-              Plataforma no soportada actualmente
-            </Text>
+          <View style={{ 
+            flex: 1, 
+            justifyContent: 'center', 
+            alignItems: 'center'  
+          }}>
+            <Text>Sorry, Your platform is currently not supported!</Text>
           </View>
         )}
 
+        {/* OVERLAY: búsqueda + lista (lo tuyo) */}
         <View style={[styles.overlay, { top: topOffset }]}>
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.inputStyle}
-              placeholderTextColor="#F2A413"
+              placeholderTextColor="grey"
               placeholder="Buscar restaurante..."
               value={filtro}
               onChangeText={setFiltro}
@@ -189,7 +192,7 @@ export default function Map() {
                   />
                   <View>
                     <Text style={styles.textTitle}>{item.restaurant_name}</Text>
-                    <Text style={styles.textDescription}>{item.description}</Text>
+                    <Text>{item.description}</Text>
                   </View>
                 </Pressable>
               )}
@@ -197,73 +200,41 @@ export default function Map() {
           )}
         </View>
 
-        <Modal
-          visible={menu_link !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setMenu_link(null)} // Android back button
-        >
-          <View style={{ flex: 1 }}>
-            {/* BACKDROP that closes on tap */}
-            <Pressable
-              onPress={() => setMenu_link(null)}
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                backgroundColor: "rgba(0,0,0,0.6)",
-              }}
-            />
-
-            {/* LAYER ABOVE THE BACKDROP */}
-            <View
-              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-              pointerEvents="box-none" // don't block backdrop where there's no card
-            >
-              {/* CARD — do NOT use Pressable here */}
-              <View
-                style={{
-                  width: "95%",
-                  height: "85%",
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  backgroundColor: "white",
-                }}
-              >
-                {Platform.OS === "web" ? (
-                  menu_link && (
-                    <iframe
-                      src={menu_link}
-                      style={{ width: "100%", height: "100%", border: "none" }}
-                    />
-                  )
-                ) : (
-                  menu_link && (
-                    <WebView
-                      source={{ uri: menu_link }}
-                      style={{ flex: 1 }}
-                    />
-                  )
-                )}
-              </View>
-            </View>
-          </View>
+        {/* Modal menú (lo tuyo) */}
+        <Modal visible={menu_link !== null} transparent animationType="fade">
+          <Pressable
+            onPress={() => setMenu_link(null)}
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.6)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Pressable style={{ width: "95%", height: "85%", borderRadius: 10, overflow: "hidden" }}>
+              {Platform.OS === "web" ? (
+                menu_link && (
+                  <iframe
+                    src={menu_link}
+                    style={{ width: "100%", height: "100%", border: "none" }}
+                  />
+                )
+              ) : (
+                menu_link && <WebView source={{ uri: menu_link }} style={{ flex: 1 }} />
+              )}
+            </Pressable>
+          </Pressable>
         </Modal>
-
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  map: {
     flex: 1,
-    backgroundColor: "#400101",
   },
-  map: { flex: 1 },
-  unsupported: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
   overlay: {
     position: "absolute",
     left: 0,
@@ -272,24 +243,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     alignItems: "center",
   },
+
   searchContainer: {
     width: "100%",
     position: "relative",
     justifyContent: "center",
   },
+
   inputStyle: {
     height: 48,
     width: "100%",
-    backgroundColor: "#730202",
-    color: "white",
+    backgroundColor: "#0D3973", // azul profundo
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#F28E13",
     paddingLeft: 12,
     paddingRight: 44,
     fontSize: 18,
     marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: "#188FD9",
+    color: "#FFFFFF",
   },
+
+  locationButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    backgroundColor: "#1EA4D9", // celeste brillante
+    padding: 14,
+    borderRadius: 40,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+
   clearButton: {
     position: "absolute",
     right: 12,
@@ -299,58 +286,46 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   clearButtonText: {
     fontSize: 18,
-    color: "#F2A413",
+    color: "#1EA4D9", // acento celeste
+    fontWeight: "bold",
   },
-  locationButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: "#F2A413",
-    padding: 12,
-    borderRadius: 40,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+
+  listStyles: {
+    width: "100%",
+    marginTop: 8,
   },
-  listStyles: { width: "100%", marginTop: 8 },
+
   itemStyles: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
-    backgroundColor: "#D9601A",
-    borderRadius: 10,
+    padding: 12,
+    backgroundColor: "#116EBF", // azul intermedio
+    borderRadius: 12,
     width: "100%",
-    marginBottom: 8,
+    marginBottom: 10,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
     elevation: 3,
   },
-  imageStyles: { width: 70, height: 70, marginRight: 10, borderRadius: 8 },
+
+  imageStyles: {
+    width: 70,
+    height: 70,
+    marginRight: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#1EA4D9", // borde celeste
+  },
+
   textTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFF",
-  },
-  textDescription: {
-    color: "#FFF",
-  },
-  modalBackground: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalInner: {
-    width: "95%",
-    height: "85%",
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "#F2A413",
-    backgroundColor: "#400101",
+    color: "#FFFFFF",
+    marginBottom: 3,
   },
 });

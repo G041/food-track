@@ -262,7 +262,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#1C0526", // fondo violeta oscuro
     alignItems: "center",
     justifyContent: "center",
   },
@@ -271,47 +271,58 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    width: "100%"
+    width: "100%",
+    backgroundColor: "#0D3973", // azul profundo, para modales
   },
 
   textStyle: {
     textAlign: "center",
-    fontSize: 20,
-    paddingBottom: 10
+    fontSize: 22,
+    paddingBottom: 12,
+    color: "#1EA4D9", // acento celeste brillante
+    fontWeight: "600",
   },
 
   buttonTextStyle: {
-    color: "white",
-    fontSize: 20,
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
   },
 
   inputStyle: {
-    color: "black",
+    color: "#fff",
     borderWidth: 1,
-    borderColor: "gray",
-    padding: 5,
-    height: 60,
+    borderColor: "#1EA4D9", // borde celeste claro
+    backgroundColor: "#116EBF", // fondo de input azul fuerte
+    paddingHorizontal: 12,
+    height: 55,
     width: "85%",
-    fontSize: 20,
+    fontSize: 18,
     marginVertical: 10,
-    borderRadius: 5,
+    borderRadius: 8,
   },
 
   buttonStyles: {
-    backgroundColor: "rebeccapurple",
+    backgroundColor: "#1EA4D9", // botón principal (celeste brillante)
     width: "80%",
-    paddingVertical: 25,   // instead of height
+    paddingVertical: 18,
     marginTop: 10,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 8,
+    shadowColor: "#0D3973",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 4,
   },
 
   cancelButtonStyles: {
-    backgroundColor: "darkred",
+    backgroundColor: "#116EBF", // azul medio
     width: "80%",
-    paddingVertical: 15,   // instead of height
-    marginTop: 10,
+    paddingVertical: 14,
+    marginTop: 12,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 8,
   },
 });

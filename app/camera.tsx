@@ -129,21 +129,21 @@ export default function App() {
                     value={restaurant_name}
                     onChangeText={setRestaurant_name}
                     style={styles.input}
-                    placeholderTextColor="#999"
+                    placeholderTextColor="#aaa"
                   />
                   <TextInput
                     placeholder="Description..."
                     value={description}
                     onChangeText={setDescription}
                     style={styles.input}
-                    placeholderTextColor="#999"
+                    placeholderTextColor="#aaa"
                   />
                   <TextInput
                     placeholder="Location..."
                     value={location}
                     onChangeText={setLocation}
                     style={styles.input}
-                    placeholderTextColor="#999"
+                    placeholderTextColor="#aaa"
                   />
 
                   <Pressable style={styles.primaryButton} onPress={handleAddRestaurant}>
@@ -174,7 +174,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#400101",
+    backgroundColor: "#1C0526", // fondo violeta oscuro
     alignItems: "center",
     justifyContent: "center",
   },
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   flipBtn: {
     position: "absolute",
     right: 30,
-    backgroundColor: "rgba(115, 2, 2, 0.7)",
+    backgroundColor: "rgba(17, 110, 191, 0.8)", // azul intermedio translúcido
     padding: 10,
     borderRadius: 50,
   },
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
 
   modalContainer: {
@@ -211,21 +211,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "90%",
-    backgroundColor: "#F2A413",
+    backgroundColor: "#0D3973", // azul profundo
     borderRadius: 15,
     padding: 20,
     margin: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
+    shadowColor: "#1EA4D9",
+    shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 8,
   },
 
   qrPreview: {
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#116EBF",
     borderWidth: 2,
-    borderColor: "#D9601A",
+    borderColor: "#1EA4D9",
     borderRadius: 10,
     padding: 10,
     marginBottom: 20,
@@ -233,37 +233,37 @@ const styles = StyleSheet.create({
 
   qrText: {
     fontWeight: "bold",
-    color: "#400101",
+    color: "white",
   },
 
   input: {
-    backgroundColor: "#fff",
-    borderColor: "#D9601A",
+    backgroundColor: "#188FD9",
+    borderColor: "#1EA4D9",
     borderWidth: 1,
     borderRadius: 8,
     padding: 10,
     width: "85%",
     fontSize: 18,
     marginVertical: 8,
-    color: "#400101",
+    color: "white",
   },
 
   primaryButton: {
-    backgroundColor: "#D9601A",
+    backgroundColor: "#1EA4D9",
     width: "80%",
     height: 50,
     marginTop: 10,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowColor: "#0D3973",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
     elevation: 5,
   },
 
   cancelButton: {
-    backgroundColor: "#730202",
+    backgroundColor: "#116EBF",
     width: "80%",
     height: 45,
     marginTop: 12,
