@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { API_URL } from "../utils/config";
+import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+
+import { API_URL } from '../utils/config';
 
 function CreateModal() {
   const [logInModalVisible, setLogInModalVisible] = useState(false);
@@ -15,39 +16,76 @@ function CreateModal() {
 
   const handleLogInRequest = async () => {
     try {
-      const logInCredentials = { identifier: logInIdentifier, password: logInPassword };
+      const logInCredentials = {
+        identifier: logInIdentifier,
+        password: logInPassword,
+      };
+
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(logInCredentials),
       });
+
       const data = await response.json();
+
+
+      if (!response.ok) {
+        // The server returned an error status (400, 404, 500, etc.)
+        console.error("Log in error:", data.error || "Unknown error");
+        Alert.alert("Signup failed", data.error || "Unknown error");
+        return; // stop execution
+      }
+
       console.log("Successfully logged in:", data);
+      // reset
       clearInputs();
+      setLogInModalVisible(false);
+      Alert.alert("Log in successful", "You can now upload QRs.");
     } catch (error) {
-      console.error("Error when trying to log in:", error);
+      console.error("Network or unexpected error:", error);
+      Alert.alert("Log in failed", "Network or unexpected error");
     }
   };
 
   const handleSignUpRequest = async () => {
     try {
-      const signUpCredentials = { emailAddress: email, username, password };
+      const signUpCredentials = {
+        emailAddress: email,
+        username: username,
+        password: password,
+      };
+
       const response = await fetch(`${API_URL}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signUpCredentials),
       });
+
       const data = await response.json();
+      
+      if (!response.ok) {
+        // The server returned an error status (400, 404, 500, etc.)
+        console.error("Signup error:", data.error || "Unknown error");
+        Alert.alert("Signup failed", data.error || "Unknown error");
+        return; // stop execution
+      }
+
+      // Success
       console.log("Successfully signed up:", data);
       clearInputs();
+      Alert.alert("Signup successful", "You can now log in.");
+      setSignUpModalVisible(false);
     } catch (error) {
-      console.error("Error when trying to sign up:", error);
+      console.error("Network or unexpected error:", error);
+      Alert.alert("Signup failed", "Network or unexpected error");
     }
   };
 
   function clearInputs() {
     setLogInIdentifier("");
     setLogInPassword("");
+
     setUserName("");
     setEmail("");
     setPassword("");
@@ -55,84 +93,100 @@ function CreateModal() {
 
   return (
     <View style={styles.containerStyles}>
-      <Text style={styles.titleText}>Bienvenido 👋</Text>
-      <Text style={styles.subtitleText}>Iniciá sesión o creá una cuenta</Text>
+      <Text style={styles.textStyle} >Please log into your account</Text>
 
-      <Pressable style={styles.mainButton} onPress={() => setLogInModalVisible(true)}>
-        <Text style={styles.buttonText}>Iniciar sesión</Text>
+      <Pressable style={styles.buttonStyles} onPress={() => setLogInModalVisible(true)}>
+        <Text style={styles.buttonTextStyle}>Log in</Text>
+      </Pressable>
+      <Pressable style={styles.buttonStyles} onPress={() => setSignUpModalVisible(true)}>
+        <Text style={styles.buttonTextStyle}>Sign up</Text>
       </Pressable>
 
-      <Pressable style={[styles.mainButton, styles.secondaryButton]} onPress={() => setSignUpModalVisible(true)}>
-        <Text style={styles.buttonText}>Registrarse</Text>
-      </Pressable>
+      <Modal visible={logInModalVisible}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <View style={styles.containerStyles}>
+                <TextInput
+                  placeholder="Enter your email or username..."
+                  value={logInIdentifier}
+                  onChangeText={setLogInIdentifier}
+                  autoCorrect={false}         
+                  spellCheck={false} 
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
+                <TextInput
+                  placeholder="Enter your password..."
+                  value={logInPassword}
+                  onChangeText={setLogInPassword}
+                  autoCorrect={false}         
+                  spellCheck={false} 
+                  secureTextEntry={true}
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
 
-      {/* Login Modal */}
-      <Modal visible={logInModalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Iniciar sesión</Text>
+                <Pressable style={styles.buttonStyles} onPress={handleLogInRequest}>
+                  <Text style={styles.buttonTextStyle}>Log In</Text>
+                </Pressable>
 
-          <TextInput
-            placeholder="Email o nombre de usuario"
-            value={logInIdentifier}
-            onChangeText={setLogInIdentifier}
-            style={styles.input}
-            placeholderTextColor="#ddd"
-          />
-          <TextInput
-            placeholder="Contraseña"
-            value={logInPassword}
-            onChangeText={setLogInPassword}
-            secureTextEntry
-            style={styles.input}
-            placeholderTextColor="#ddd"
-          />
-
-          <Pressable style={styles.mainButton} onPress={handleLogInRequest}>
-            <Text style={styles.buttonText}>Entrar</Text>
-          </Pressable>
-
-          <Pressable style={styles.cancelButton} onPress={() => { setLogInModalVisible(false); clearInputs(); }}>
-            <Text style={styles.buttonText}>Cancelar</Text>
-          </Pressable>
-        </View>
+                <Pressable style={styles.cancelButtonStyles} onPress={() => {setLogInModalVisible(false); clearInputs()}}>
+                  <Text style={styles.buttonTextStyle}>Cancelar</Text>
+                </Pressable>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
 
-      {/* Sign Up Modal */}
-      <Modal visible={signUpModalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Crear cuenta</Text>
+      <Modal visible={signUpModalVisible}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <View style={styles.containerStyles}>
+                <TextInput
+                  placeholder="Enter your email..."
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCorrect={false}         
+                  spellCheck={false} 
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
+                <TextInput
+                  placeholder="Enter your username..."
+                  value={username}
+                  onChangeText={setUserName}
+                  autoCorrect={false}         
+                  spellCheck={false} 
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
+                <TextInput
+                  placeholder="Enter your password..."
+                  value={password}
+                  onChangeText={setPassword}
+                  autoCorrect={false}         
+                  spellCheck={false}
+                  secureTextEntry={true}
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
 
-          <TextInput
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.input}
-            placeholderTextColor="#ddd"
-          />
-          <TextInput
-            placeholder="Nombre de usuario"
-            value={username}
-            onChangeText={setUserName}
-            style={styles.input}
-            placeholderTextColor="#ddd"
-          />
-          <TextInput
-            placeholder="Contraseña"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={styles.input}
-            placeholderTextColor="#ddd"
-          />
+                <Pressable style={styles.buttonStyles} onPress={handleSignUpRequest}>
+                  <Text style={styles.buttonTextStyle}>Sign Up</Text>
+                </Pressable>
 
-          <Pressable style={styles.mainButton} onPress={handleSignUpRequest}>
-            <Text style={styles.buttonText}>Registrarme</Text>
-          </Pressable>
-
-          <Pressable style={styles.cancelButton} onPress={() => { setSignUpModalVisible(false); clearInputs(); }}>
-            <Text style={styles.buttonText}>Cancelar</Text>
-          </Pressable>
-        </View>
+                <Pressable style={styles.cancelButtonStyles} onPress={() => {setSignUpModalVisible(false); clearInputs()}}>
+                  <Text style={styles.buttonTextStyle}>Cancelar</Text>
+                </Pressable>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -141,15 +195,15 @@ function CreateModal() {
 export default function Home() {
   return (
     <View style={styles.container}>
-      <CreateModal />
-    </View>
+      <CreateModal/>
+    </View> 
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#400101",
+    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -158,78 +212,47 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#400101",
-    width: "100%",
-    padding: 24,
+    width: "100%"
   },
 
-  titleText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#F2A413",
-    marginBottom: 4,
+  textStyle: {
+    textAlign: "center",
+    fontSize: 20,
+    paddingBottom: 10
   },
 
-  subtitleText: {
-    fontSize: 16,
-    color: "#F28E13",
-    marginBottom: 24,
-  },
-
-  mainButton: {
-    backgroundColor: "#D9601A",
-    width: "80%",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    marginVertical: 8,
-    elevation: 3,
-  },
-
-  secondaryButton: {
-    backgroundColor: "#730202",
-  },
-
-  cancelButton: {
-    backgroundColor: "#730202",
-    width: "80%",
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 12,
-  },
-
-  buttonText: {
+  buttonTextStyle: {
     color: "white",
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
   },
 
-  input: {
-    backgroundColor: "#400101",
+  inputStyle: {
+    color: "black",
     borderWidth: 1,
-    borderColor: "#F28E13",
-    borderRadius: 10,
+    borderColor: "gray",
+    padding: 5,
+    height: 60,
     width: "85%",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: "white",
-    marginVertical: 8,
+    fontSize: 20,
+    marginVertical: 10,
+    borderRadius: 5,
   },
 
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "#400101",
-    alignItems: "center",
+  buttonStyles: {
+    backgroundColor: "rebeccapurple",
+    width: "80%",
+    paddingVertical: 25,   // instead of height
+    marginTop: 10,
     justifyContent: "center",
-    paddingHorizontal: 20,
+    alignItems: "center",
   },
 
-  modalTitle: {
-    color: "#F2A413",
-    fontSize: 26,
-    fontWeight: "bold",
-    marginBottom: 16,
+  cancelButtonStyles: {
+    backgroundColor: "darkred",
+    width: "80%",
+    paddingVertical: 15,   // instead of height
+    marginTop: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
