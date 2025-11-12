@@ -180,7 +180,7 @@ export default function App() {
                           <Picker.Item label="Bodegon" value="Bodegon" />
                           <Picker.Item label="Restaurante" value="Restaurante" />
                           <Picker.Item label="Bar" value="Bar" />
-                          <Picker.Item label="Comida Rápida" value="Comida Rapida" />
+                          <Picker.Item label="Comida Rápida" value="Comida rapida" />
                         </Picker>
                       </View>
                     </View>
