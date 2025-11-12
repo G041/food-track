@@ -7,7 +7,7 @@ import * as Location from "expo-location"; //location save on submit
 import { Alert } from "react-native"; //location save on submit
 
 
-import { API_URL } from './config';
+import { API_URL } from '../utils/config';
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();

@@ -8,7 +8,9 @@ import * as Location from "expo-location";
 import type { Region } from "react-native-maps";
 import MapView, { Circle, Marker } from "react-native-maps";
 
-import { API_URL } from "./config";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { API_URL } from "../utils/config";
 
 type Restaurant = {
   id_restaurant: number;
@@ -31,6 +33,10 @@ export default function Map() {
 
   // --- NUEVO: región del usuario ---
   const [region, setRegion] = useState<RegionWithAccuracy | null>(null);
+
+  const insets = useSafeAreaInsets();
+  // topOffset ensures the overlay sits below the notch/status bar
+  const topOffset = insets.top + 10; // tweak +10 or +12 for spacing
 
   // 1) pedir ubicación y setear initialRegion
   useEffect(() => {
@@ -102,49 +108,60 @@ export default function Map() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ flex: 1 }}>
         {/* MAPA */}
-        <MapView
-          style={styles.map}
-          initialRegion={region}
-          ref = {mapRef}
-          showsUserLocation
-          showsPointsOfInterest={false}
-          mapType="mutedStandard"
-        >
-          <Pressable onPress={centerOnUser} style={styles.locationButton}>
-            <Ionicons name="locate" size={28} color="black" />
-          </Pressable>
-          {/* Círculo de precisión opcional */}
-          {region.accuracy !== undefined && (
-            <Circle
-              center={{ latitude: region.latitude, longitude: region.longitude }}
-              radius={Math.max(region.accuracy ?? 25, 25)} // maneja null/undefined
-              fillColor="rgba(0,122,255,0.15)"
-              strokeColor="rgba(0,122,255,0.6)"
-              strokeWidth={2}
-            />
-          )}
-
-          {/* Markers de restaurantes (fork & knife si ya los pusiste) */}
-          {restaurants
-            .filter(r => r.latitude != null && r.longitude != null) // <-- evita null
-            .map(r => (
-              <Marker
-                key={r.id_restaurant}
-                coordinate={{
-                  latitude: r.latitude as number,
-                  longitude: r.longitude as number,
-                }}
-                title={r.restaurant_name}
-                description={r.description}
-                onPress={() => setMenu_link(r.menu_link)}
+        {Platform.OS === "ios" ? (
+          <MapView
+            style={styles.map}
+            initialRegion={region}
+            ref = {mapRef}
+            showsUserLocation
+            showsPointsOfInterest={false}
+            mapType="mutedStandard"
+            compassOffset={{ x: -10, y: insets.top + 20 }}
+          >
+            <Pressable onPress={centerOnUser} style={styles.locationButton}>
+              <Ionicons name="locate" size={28} color="black" />
+            </Pressable>
+            {/* Círculo de precisión opcional */}
+            {region.accuracy !== undefined && (
+              <Circle
+                center={{ latitude: region.latitude, longitude: region.longitude }}
+                radius={Math.max(region.accuracy ?? 25, 25)} // maneja null/undefined
+                fillColor="rgba(0,122,255,0.15)"
+                strokeColor="rgba(0,122,255,0.6)"
+                strokeWidth={2}
               />
-            ))
-          }
+            )}
+            
+            {/* Markers de restaurantes (fork & knife si ya los pusiste) */}
+            {restaurants
+              .filter(r => r.latitude != null && r.longitude != null) // <-- evita null
+              .map(r => (
+                <Marker
+                  key={r.id_restaurant}
+                  coordinate={{
+                    latitude: r.latitude as number,
+                    longitude: r.longitude as number,
+                  }}
+                  title={r.restaurant_name}
+                  description={r.description}
+                  onPress={() => setMenu_link(r.menu_link)}
+                />
+              ))
+            }
 
-        </MapView>
+          </MapView>
+        ) : (
+          <View style={{ 
+            flex: 1, 
+            justifyContent: 'center', 
+            alignItems: 'center'  
+          }}>
+            <Text>Sorry, Your platform is currently not supported!</Text>
+          </View>
+        )}
 
         {/* OVERLAY: búsqueda + lista (lo tuyo) */}
-        <View style={styles.overlay}>
+        <View style={[styles.overlay, { top: topOffset }]}>
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.inputStyle}
@@ -215,35 +232,38 @@ export default function Map() {
 }
 
 const styles = StyleSheet.create({
-  map: { flex: 1 },
+  map: { 
+    flex: 1 
+  },
 
   overlay: {
     position: "absolute",
-    top: 0,
+    left: 0,
+    right: 0,
     width: "100%",
-    alignItems: "center",
     paddingHorizontal: 15,
-    paddingTop: 8,
+    alignItems: "center",
   },
+
   searchContainer: {
     width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
+    position: "relative", // so absolute children are relative to this box
+    // center vertical alignment
+    justifyContent: "center",
   },
+
   inputStyle: {
-    color: "black",
+    height: 48,
+    width: "100%",
     backgroundColor: "white",
     borderRadius: 12,
-    paddingVertical: 8,
     paddingLeft: 12,
-    paddingRight: 36, // espacio para la X
+    paddingRight: 44,          // room for the clear button
     fontSize: 18,
-    width: "100%",
-    height: "60%",
-    marginTop: "11%",
-    marginBottom: 5,
+    marginBottom: 8,
   },
-   locationButton: {  //boton para el mapa
+
+  locationButton: {  //boton para el mapa
     position: "absolute",
     bottom: 30,
     right: 20,
@@ -255,10 +275,27 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  clearButton: { position: "absolute", right: 9, padding: 6, marginTop: "10.5%" },
-  clearButtonText: { fontSize: 18, color: "black" },
 
-  listStyles: { width: "100%", marginTop: 8 },
+  clearButton: { 
+    position: "absolute",
+    right: 12,
+    top: "50%",                  // place midpoint of the button at 50% height
+    transform: [{ translateY: -16 }], // idk why but this seems to work
+    padding: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  clearButtonText: { 
+    fontSize: 18, 
+    color: "black" 
+  },
+
+  listStyles: { 
+    width: "100%", 
+    marginTop: 8 
+  },
+
   itemStyles: {
     flexDirection: "row",
     alignItems: "center",
@@ -273,6 +310,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  imageStyles: { width: 70, height: 70, marginRight: 10, borderRadius: 8 },
-  textTitle: { fontSize: 18, fontWeight: "bold" },
+
+  imageStyles: { 
+    width: 70, 
+    height: 70, 
+    marginRight: 10,
+    borderRadius: 8 
+  },
+
+  textTitle: { 
+    fontSize: 18, 
+    fontWeight: "bold" 
+  },
 });
