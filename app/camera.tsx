@@ -6,7 +6,6 @@ import { Keyboard, Modal, Pressable, StyleSheet, Text, TextInput, TouchableWitho
 import * as Location from "expo-location"; //location save on submit
 import { Alert } from "react-native"; //location save on submit
 
-
 import { API_URL } from '../utils/config';
 
 export default function App() {
@@ -22,7 +21,6 @@ export default function App() {
   const [location, setLocation] = useState(""); 
 
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null); //location save on submit
-
 
   // Quisimos pero no pudimos que el permiso te lo pida al entrar por primera vez a la pestaña, y q el boton 
   // solo aparezca si en esa le denegaste permiso
@@ -67,34 +65,33 @@ export default function App() {
 
 
   const handleAddRestaurant = async () => {
-  try {
-    const newRestaurant = {
-      restaurant_name,
-      description,
-      menu_link,
-      location,                      // keep if you still want a human-readable address
-      latitude: coords?.latitude ?? null,
-      longitude: coords?.longitude ?? null,
-    };
+    try {
+      const newRestaurant = {
+        restaurant_name,
+        description,
+        menu_link,
+        location,                      // keep if you still want a human-readable address
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+      };
 
-    const response = await fetch(`${API_URL}/restaurants`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newRestaurant),
-    });
+      const response = await fetch(`${API_URL}/restaurants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRestaurant),
+      });
 
-    const data = await response.json();
-    console.log("Successfully added restaurant:", data);
+      const data = await response.json();
+      console.log("Successfully added restaurant:", data);
 
-    // reset
-    setRestaurant_name(""); setDescription(""); setMenu_link(""); setLocation("");
-    setCoords(null);
-    setSeleccionado(null); setScanned(false);
-  } catch (error) {
-    console.error("Error when trying to add new restaurant:", error);
-  }
-};
-
+      // reset
+      setRestaurant_name(""); setDescription(""); setMenu_link(""); setLocation("");
+      setCoords(null);
+      setSeleccionado(null); setScanned(false);
+    } catch (error) {
+      console.error("Error when trying to add new restaurant:", error);
+    }
+  };
 
   const renderCamera = () => {
     return (

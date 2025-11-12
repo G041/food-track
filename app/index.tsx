@@ -17,8 +17,8 @@ type Restaurant = {
   restaurant_name: string;
   description: string;
   menu_link: string;
-  latitude: number | null;   // por si vienen nulos en la primera migración
-  longitude: number | null;
+  latitude: number;   // por si vienen nulos en la primera migración
+  longitude: number;
 };
 
 // Región con accuracy opcional (para el círculo)
@@ -99,7 +99,6 @@ export default function Map() {
     500 // duración animación en ms
   );
 };
-
 
   // Si aún no tengo region, podés mostrar un placeholder simple
   if (!region) return <View style={{ flex: 1, backgroundColor: "#0b1523" }} />;
@@ -279,7 +278,7 @@ const styles = StyleSheet.create({
   clearButton: { 
     position: "absolute",
     right: 12,
-    top: "50%",                  // place midpoint of the button at 50% height
+    top: "50%",                       // place midpoint of the button at 50% height
     transform: [{ translateY: -16 }], // idk why but this seems to work
     padding: 5,
     justifyContent: "center",
