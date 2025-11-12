@@ -24,8 +24,8 @@ export async function deleteUsername() {
   await SecureStore.deleteItemAsync('username');
 }
 
-export async function saveUserID(userID: number) {
-  await SecureStore.setItemAsync('user_id', userID.toString());
+export async function saveUserID(userID: string) {
+  await SecureStore.setItemAsync('user_id', userID);
 }
 
 export async function getUserID() {

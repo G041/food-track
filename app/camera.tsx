@@ -1,4 +1,7 @@
+import { AppDispatch, RootState } from "@/store";
+import { addRestaurantThunk } from "@/store/restaurantsSlice";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { unwrapResult } from "@reduxjs/toolkit";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
 import { useRef, useState } from "react";
@@ -13,7 +16,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { API_URL } from "../utils/config";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -28,6 +31,9 @@ export default function App() {
   const [location, setLocation] = useState("");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
+  const dispatch = useDispatch<AppDispatch>();
+  const isLoading = useSelector((state: RootState) => state.restaurants.isLoading);
+
   if (!permission) return null;
 
   if (!permission.granted) {
@@ -39,6 +45,16 @@ export default function App() {
       </View>
     );
   }
+
+  function clearRestaurant() {
+    setRestaurant_name("");
+    setDescription("");
+    setMenu_link("");
+    setLocation("");
+    setCoords(null);
+    setSeleccionado(null);
+    setScanned(false);
+  };
 
   const toggleFacing = () => {
     setFacing((prev) => (prev === "back" ? "front" : "back"));
@@ -64,34 +80,25 @@ export default function App() {
   };
 
   const handleAddRestaurant = async () => {
+    const newRestaurant = {
+      restaurant_name,
+      description,
+      menu_link,
+      location,
+      latitude: coords?.latitude ?? null,
+      longitude: coords?.longitude ?? null,
+    };
+
     try {
-      const newRestaurant = {
-        restaurant_name,
-        description,
-        menu_link,
-        location,
-        latitude: coords?.latitude ?? null,
-        longitude: coords?.longitude ?? null,
-      };
+      const action = await dispatch(addRestaurantThunk(newRestaurant));
+      const result = unwrapResult(action); // optional: throws if rejected
 
-      const response = await fetch(`${API_URL}/restaurants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newRestaurant),
-      });
+      console.log("Restaurant added successfully:", result);
 
-      const data = await response.json();
-      console.log("Successfully added restaurant:", data);
-
-      setRestaurant_name("");
-      setDescription("");
-      setMenu_link("");
-      setLocation("");
-      setCoords(null);
-      setSeleccionado(null);
-      setScanned(false);
-    } catch (error) {
-      console.error("Error when trying to add new restaurant:", error);
+      // reset forms
+      clearRestaurant();
+    } catch (err) {
+      console.error("Failed to add restaurant:", err);
     }
   };
 

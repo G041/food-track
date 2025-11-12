@@ -1,13 +1,21 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 
-import { clearCredentials, getToken, getUsername, saveToken, saveUserID, saveUsername } from "@/utils/authStorage";
-import { API_URL } from '../utils/config';
+import { AppDispatch, RootState } from "@/store";
+import { loginThunk, logoutThunk, signupThunk } from "@/store/authSlice";
+import { unwrapResult } from "@reduxjs/toolkit";
+import { useDispatch, useSelector } from "react-redux";
 
 function CreateModal() {
 
-  const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
+  const dispatch = useDispatch<AppDispatch>();
 
+  // read auth state from Redux
+  const isLoggedIn = useSelector((s: RootState) => s.auth.isLoggedIn);
+  const reduxUsername = useSelector((s: RootState) => s.auth.username);
+  const isLoading = useSelector((s: RootState) => s.auth.isLoading);
+
+  // local UI state
   const [logInModalVisible, setLogInModalVisible] = useState(false);
   const [signUpModalVisible, setSignUpModalVisible] = useState(false);
 
@@ -18,65 +26,23 @@ function CreateModal() {
   const [logInIdentifier, setLogInIdentifier] = useState("");
   const [logInPassword, setLogInPassword] = useState("");
 
-  const [areWeLoggedIn, setAreWeLoggedIn] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      const token = await getToken();
-      setAreWeLoggedIn(!!token); // true if token exists
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      if (areWeLoggedIn) {
-        const savedUsername = await getUsername();
-        setLoggedInUsername(savedUsername);
-      }
-    })();
-  }, [areWeLoggedIn]);
-
   const handleLogInRequest = async () => {
     try {
-      const logInCredentials = {
-        identifier: logInIdentifier,
-        password: logInPassword,
-      };
+      // dispatch thunk and unwrap result (will throw if rejected)
+      const action = await dispatch(
+        loginThunk({ identifier: logInIdentifier, password: logInPassword })
+      );
+      const payload = unwrapResult(action); // { token, username, user_id }
 
-      const response = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(logInCredentials),
-      });
-
-      const data = await response.json();
-
-
-      if (!response.ok) {
-        // The server returned an error status (400, 404, 500, etc.)
-        console.error("Log in error:", data.error || "Unknown error");
-        Alert.alert("Signup failed", data.error || "Unknown error");
-        return; // stop execution
-      }
-
-      // success
-
-      // store token
-      await saveToken(data.accessToken);
-      await saveUsername(data.user.username)
-      await saveUserID(data.user.id);
-
-      setAreWeLoggedIn(true); 
-
-      // reset
+      // thunk persisted token/username/user_id via authSlice implementation
       clearInputs();
       setLogInModalVisible(false);
-
-      console.log("Successfully logged in:", data);
-      Alert.alert("Log in successful", "You can now upload QRs.");
-    } catch (error) {
-      console.error("Network or unexpected error:", error);
-      Alert.alert("Log in failed", "Network or unexpected error");
+      //Alert.alert("Log in successful", `Welcome ${payload.username ?? ""}`);
+    } catch (err: any) {
+      // unwrapResult throws the rejectWithValue payload if rejected
+      const message = err?.message ?? err ?? "Login failed";
+      console.error("Login error:", err);
+      Alert.alert("Login failed", String(message));
     }
   };
 
@@ -88,39 +54,28 @@ function CreateModal() {
         password: password,
       };
 
-      const response = await fetch(`${API_URL}/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signUpCredentials),
-      });
+      // dispatch thunk and unwrap result (will throw if rejected)
+      const action = await dispatch(
+        signupThunk(signUpCredentials)
+      );
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // The server returned an error status (400, 404, 500, etc.)
-        console.error("Signup error:", data.error || "Unknown error");
-        Alert.alert("Signup failed", data.error || "Unknown error");
-        return; // stop execution
-      }
-
-      // Success
-      
-      // store token
-      await saveToken(data.accessToken);
-      await saveUsername(data.user.username)
-      await saveUserID(data.user.id);
-
-      setAreWeLoggedIn(true); 
-      
+      const payload = unwrapResult(action); // { token, username, user_id }
+      // thunk persisted token/username/user_id via authSlice implementation
       clearInputs();
-      setSignUpModalVisible(false);
-
-      console.log("Successfully signed up, and logged in:", data);
-      Alert.alert("Signup successful");
-    } catch (error) {
-      console.error("Network or unexpected error:", error);
-      Alert.alert("Signup failed", "Network or unexpected error");
+      setLogInModalVisible(false);
+      //Alert.alert("Log in successful", `Welcome ${payload.username ?? ""}`);
+    } catch (err: any) {
+      // unwrapResult throws the rejectWithValue payload if rejected
+      const message = err?.message ?? err ?? "Login failed";
+      console.error("Signup error:", err);
+      Alert.alert("Signup failed", String(message));
     }
+  };
+
+  const handleLogout = async () => {
+    // use thunk which clears SecureStore (you implemented logoutThunk)
+    await dispatch(logoutThunk());
+    // store is updated in extraReducers logoutThunk.fulfilled
   };
 
   function clearInputs() {
@@ -132,21 +87,11 @@ function CreateModal() {
     setPassword("");
   }
 
-  async function logOut() {
-    await clearCredentials();
-    setAreWeLoggedIn(false); 
-  }
-
-  if (areWeLoggedIn === null) {
-    // Still checking storage
-    return null; // or a loading spinner maybe(?
-  }
-
-  return areWeLoggedIn ? (
+  return isLoggedIn ? (
     <View style={styles.containerStyles}>
-      <Text style={styles.textStyle}>Hi { loggedInUsername }</Text>
+      <Text style={styles.textStyle}>Hi { reduxUsername }</Text>
 
-      <Pressable style={styles.cancelButtonStyles} onPress={() => logOut()}>
+      <Pressable style={styles.cancelButtonStyles} onPress={handleLogout}>
         <Text style={styles.buttonTextStyle}>Log out</Text>
       </Pressable>
     </View>
@@ -161,7 +106,7 @@ function CreateModal() {
         <Text style={styles.buttonTextStyle}>Sign up</Text>
       </Pressable>
 
-      <Modal visible={logInModalVisible}>
+      <Modal visible={logInModalVisible} animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
@@ -175,7 +120,7 @@ function CreateModal() {
                   autoCorrect={false}         
                   spellCheck={false} 
                   style={styles.inputStyle}
-                  placeholderTextColor="grey"
+                  placeholderTextColor="white"
                 />
                 <TextInput
                   placeholder="Enter your password..."
@@ -185,7 +130,7 @@ function CreateModal() {
                   spellCheck={false} 
                   secureTextEntry={true}
                   style={styles.inputStyle}
-                  placeholderTextColor="grey"
+                  placeholderTextColor="white"
                 />
 
                 <Pressable style={styles.buttonStyles} onPress={handleLogInRequest}>
@@ -200,7 +145,7 @@ function CreateModal() {
         </KeyboardAvoidingView>
       </Modal>
 
-      <Modal visible={signUpModalVisible}>
+      <Modal visible={signUpModalVisible} animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
@@ -214,7 +159,7 @@ function CreateModal() {
                   autoCorrect={false}         
                   spellCheck={false} 
                   style={styles.inputStyle}
-                  placeholderTextColor="grey"
+                  placeholderTextColor="white"
                 />
                 <TextInput
                   placeholder="Enter your username..."
@@ -223,7 +168,7 @@ function CreateModal() {
                   autoCorrect={false}         
                   spellCheck={false} 
                   style={styles.inputStyle}
-                  placeholderTextColor="grey"
+                  placeholderTextColor="white"
                 />
                 <TextInput
                   placeholder="Enter your password..."
@@ -233,7 +178,7 @@ function CreateModal() {
                   spellCheck={false}
                   secureTextEntry={true}
                   style={styles.inputStyle}
-                  placeholderTextColor="grey"
+                  placeholderTextColor="white"
                 />
 
                 <Pressable style={styles.buttonStyles} onPress={handleSignUpRequest}>

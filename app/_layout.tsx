@@ -1,7 +1,25 @@
+import { AppDispatch, RootState, store } from "@/store"; // adjust path if needed
+import { loadTokenFromStorage } from "@/store/authSlice"; // thunk
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useEffect } from "react";
+import { Provider, useDispatch, useSelector } from "react-redux";
 
-export default function RootLayout() {
+
+function AppTabs() {
+  const dispatch = useDispatch<AppDispatch>();
+  const isLoggedIn = useSelector((s: RootState) => s.auth.isLoggedIn);
+  const isLoading = useSelector((s: RootState) => s.auth.isLoading);
+
+  // bootstrap once: load token from secure storage into redux
+  useEffect(() => {
+    dispatch(loadTokenFromStorage());
+  }, [dispatch]);
+
+  // while loading, you can return null or a spinner; we'll render Tabs anyway
+  // but you could also show a splash/loading screen
+  if (isLoading) return null;
+
   return (
     <Tabs
       screenOptions={{
@@ -27,7 +45,7 @@ export default function RootLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Mapa",
+          title: "Map",
           tabBarIcon: ({ color, size }) => (
             <FontAwesome5 name="map-marked-alt" size={size} color={color} />
           ),
@@ -36,7 +54,8 @@ export default function RootLayout() {
       <Tabs.Screen
         name="camera"
         options={{
-          title: "Escanear QR",
+          title: "Scan a QR",
+          href: isLoggedIn ? "/camera" : null,
           tabBarIcon: ({ color, size }) => (
             <FontAwesome5 name="qrcode" size={size} color={color} />
           ),
@@ -45,7 +64,7 @@ export default function RootLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Inicio",
+          title: "Profile",
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="home" size={size} color={color} />
           ),
@@ -55,8 +74,11 @@ export default function RootLayout() {
   );
 }
 
-/* 
-<Stack>
-  <Stack.Screen name="index" />
-</Stack>
-*/
+export default function RootLayout() {
+  return (
+    <Provider store={store}>
+      <AppTabs/>
+    </Provider>
+  );
+}
+
