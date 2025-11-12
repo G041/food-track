@@ -4,6 +4,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -19,6 +20,8 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 
 export default function App() {
+
+  const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef<CameraView>(null);
   const [facing, setFacing] = useState<CameraType>("back");
@@ -32,7 +35,10 @@ export default function App() {
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
-  const isLoading = useSelector((state: RootState) => state.restaurants.isLoading);
+
+  // read auth state from Redux
+  const isLoggedIn = useSelector((s: RootState) => s.auth.isLoggedIn);
+  const isLoading = useSelector((s: RootState) => s.auth.isLoading);
 
   if (!permission) return null;
 
@@ -175,7 +181,26 @@ export default function App() {
     </TouchableWithoutFeedback>
   );
 
-  return <View style={styles.container}>{renderCamera()}</View>;
+  return !isLoggedIn ? (
+      <View style={styles.container}>
+        <Text style={{ color: "white", fontSize: 15}}>You must first log in to be able to upload QRs</Text>
+         <Pressable
+            onPress={() => router.push("/home")} // the name of the tab screen
+            style={{
+              padding: 15,
+              marginTop: 10,
+              backgroundColor: "#1EA4D9",
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ color: "white" }}>Go to Profile Tab</Text>
+        </Pressable>
+      </View>
+    ) : (
+      <View style={styles.container}>
+        {renderCamera()}
+      </View>
+  );
 }
 
 const styles = StyleSheet.create({

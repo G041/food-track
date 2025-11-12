@@ -28,8 +28,8 @@ function AppTabs() {
           backgroundColor: "#1C0526", // fondo oscuro profundo
           borderTopColor: "#0D3973", // borde superior azul oscuro
           shadowColor: "#116EBF",
-          shadowOpacity: 0.3,
-          shadowRadius: 6,
+          shadowOpacity: 0.4,
+          shadowRadius: 10,
           elevation: 5,
           paddingTop: 5,
         },
@@ -55,7 +55,6 @@ function AppTabs() {
         name="camera"
         options={{
           title: "Scan a QR",
-          href: isLoggedIn ? "/camera" : null,
           tabBarIcon: ({ color, size }) => (
             <FontAwesome5 name="qrcode" size={size} color={color} />
           ),
