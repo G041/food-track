@@ -31,7 +31,8 @@ export default function Map() {
   const [menu_link, setMenu_link] = useState<string | null>(null);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const mapRef = useRef<MapView>(null);
-
+  const [selectedMarker, setSelectedMarker] = useState<number | null>(null);
+  
   // --- NUEVO: región del usuario ---
   const [region, setRegion] = useState<RegionWithAccuracy | null>(null);
 
@@ -173,9 +174,19 @@ export default function Map() {
                   }}
                   title={r.restaurant_name}
                   description={r.description}
-                  onPress={() => setMenu_link(r.menu_link)}
+                  onPress={() => {
+                    if (selectedMarker === r.id_restaurant) {
+                      // segundo toque → abre el menú
+                      setMenu_link(r.menu_link);
+                      setSelectedMarker(null); // resetea después de abrir
+                    } else {
+                      // primer toque → solo selecciona el marker
+                      setSelectedMarker(r.id_restaurant);
+                    }
+                  }}
                 />
               ))}
+
 
 
           </MapView>
