@@ -197,25 +197,57 @@ export default function Map() {
           )}
         </View>
 
-        <Modal visible={menu_link !== null} transparent animationType="fade">
-          <Pressable
-            onPress={() => setMenu_link(null)}
-            style={styles.modalBackground}
-          >
-            <Pressable style={styles.modalInner}>
-              {Platform.OS === "web" ? (
-                menu_link && (
-                  <iframe
-                    src={menu_link}
-                    style={{ width: "100%", height: "100%", border: "none" }}
-                  />
-                )
-              ) : (
-                menu_link && <WebView source={{ uri: menu_link }} style={{ flex: 1 }} />
-              )}
-            </Pressable>
-          </Pressable>
+        <Modal
+          visible={menu_link !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMenu_link(null)} // Android back button
+        >
+          <View style={{ flex: 1 }}>
+            {/* BACKDROP that closes on tap */}
+            <Pressable
+              onPress={() => setMenu_link(null)}
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: "rgba(0,0,0,0.6)",
+              }}
+            />
+
+            {/* LAYER ABOVE THE BACKDROP */}
+            <View
+              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+              pointerEvents="box-none" // don't block backdrop where there's no card
+            >
+              {/* CARD — do NOT use Pressable here */}
+              <View
+                style={{
+                  width: "95%",
+                  height: "85%",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  backgroundColor: "white",
+                }}
+              >
+                {Platform.OS === "web" ? (
+                  menu_link && (
+                    <iframe
+                      src={menu_link}
+                      style={{ width: "100%", height: "100%", border: "none" }}
+                    />
+                  )
+                ) : (
+                  menu_link && (
+                    <WebView
+                      source={{ uri: menu_link }}
+                      style={{ flex: 1 }}
+                    />
+                  )
+                )}
+              </View>
+            </View>
+          </View>
         </Modal>
+
       </View>
     </TouchableWithoutFeedback>
   );
