@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 
 import { API_URL } from '../utils/config';
 
@@ -82,78 +82,91 @@ function CreateModal() {
       </Pressable>
 
       <Modal visible={logInModalVisible}>
-        <View style={styles.containerStyles}>
-            <TextInput
-              placeholder="Enter your email or username..."
-              value={logInIdentifier}
-              onChangeText={setLogInIdentifier}
-              autoCorrect={false}         
-              spellCheck={false} 
-              style={styles.inputStyle}
-              placeholderTextColor="grey"
-            />
-            <TextInput
-              placeholder="Enter your password..."
-              value={logInPassword}
-              onChangeText={setLogInPassword}
-              autoCorrect={false}         
-              spellCheck={false} 
-              secureTextEntry={true}
-              style={styles.inputStyle}
-              placeholderTextColor="grey"
-            />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <View style={styles.containerStyles}>
+                <TextInput
+                  placeholder="Enter your email or username..."
+                  value={logInIdentifier}
+                  onChangeText={setLogInIdentifier}
+                  autoCorrect={false}         
+                  spellCheck={false} 
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
+                <TextInput
+                  placeholder="Enter your password..."
+                  value={logInPassword}
+                  onChangeText={setLogInPassword}
+                  autoCorrect={false}         
+                  spellCheck={false} 
+                  secureTextEntry={true}
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
 
-            <Pressable style={styles.buttonStyles} onPress={handleLogInRequest}>
-              <Text style={styles.buttonTextStyle}>Log In</Text>
-            </Pressable>
+                <Pressable style={styles.buttonStyles} onPress={handleLogInRequest}>
+                  <Text style={styles.buttonTextStyle}>Log In</Text>
+                </Pressable>
 
-            <Pressable style={styles.cancelButtonStyles} onPress={() => {setLogInModalVisible(false); clearInputs()}}>
-              <Text style={styles.buttonTextStyle}>Cancelar</Text>
-            </Pressable>
-        </View>
+                <Pressable style={styles.cancelButtonStyles} onPress={() => {setLogInModalVisible(false); clearInputs()}}>
+                  <Text style={styles.buttonTextStyle}>Cancelar</Text>
+                </Pressable>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={signUpModalVisible}>
-        <View style={styles.containerStyles}>
-            <TextInput
-              placeholder="Enter your email..."
-              value={email}
-              onChangeText={setEmail}
-              autoCorrect={false}         
-              spellCheck={false} 
-              style={styles.inputStyle}
-              placeholderTextColor="grey"
-            />
-            <TextInput
-              placeholder="Enter your username..."
-              value={username}
-              onChangeText={setUserName}
-              autoCorrect={false}         
-              spellCheck={false} 
-              style={styles.inputStyle}
-              placeholderTextColor="grey"
-            />
-            <TextInput
-              placeholder="Enter your password..."
-              value={password}
-              onChangeText={setPassword}
-              autoCorrect={false}         
-              spellCheck={false}
-              secureTextEntry={true}
-              style={styles.inputStyle}
-              placeholderTextColor="grey"
-            />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <View style={styles.containerStyles}>
+                <TextInput
+                  placeholder="Enter your email..."
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCorrect={false}         
+                  spellCheck={false} 
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
+                <TextInput
+                  placeholder="Enter your username..."
+                  value={username}
+                  onChangeText={setUserName}
+                  autoCorrect={false}         
+                  spellCheck={false} 
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
+                <TextInput
+                  placeholder="Enter your password..."
+                  value={password}
+                  onChangeText={setPassword}
+                  autoCorrect={false}         
+                  spellCheck={false}
+                  secureTextEntry={true}
+                  style={styles.inputStyle}
+                  placeholderTextColor="grey"
+                />
 
-            <Pressable style={styles.buttonStyles} onPress={handleSignUpRequest}>
-              <Text style={styles.buttonTextStyle}>Sign Up</Text>
-            </Pressable>
+                <Pressable style={styles.buttonStyles} onPress={handleSignUpRequest}>
+                  <Text style={styles.buttonTextStyle}>Sign Up</Text>
+                </Pressable>
 
-            <Pressable style={styles.cancelButtonStyles} onPress={() => {setSignUpModalVisible(false); clearInputs()}}>
-              <Text style={styles.buttonTextStyle}>Cancelar</Text>
-            </Pressable>
-        </View>
+                <Pressable style={styles.cancelButtonStyles} onPress={() => {setSignUpModalVisible(false); clearInputs()}}>
+                  <Text style={styles.buttonTextStyle}>Cancelar</Text>
+                </Pressable>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
-
     </View>
   );
 }
@@ -192,13 +205,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
 
-  inputStyle:{
+  inputStyle: {
     color: "black",
     borderWidth: 1,
     borderColor: "gray",
     padding: 10,
+    height: 60,
     width: "85%",
-    height: "10%",
     fontSize: 20,
     marginVertical: 10,
     borderRadius: 5,
@@ -207,18 +220,18 @@ const styles = StyleSheet.create({
   buttonStyles: {
     backgroundColor: "rebeccapurple",
     width: "80%",
-    height: "15%",
+    paddingVertical: 25,   // instead of height
     marginTop: 10,
-    justifyContent: "center", 
+    justifyContent: "center",
     alignItems: "center",
   },
 
   cancelButtonStyles: {
     backgroundColor: "darkred",
     width: "80%",
-    height: "8%",
+    paddingVertical: 15,   // instead of height
     marginTop: 10,
-    justifyContent: "center", 
+    justifyContent: "center",
     alignItems: "center",
   },
 
