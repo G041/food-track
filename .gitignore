@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+#Para no tener que estar cambiando la ip a cada rato
+utils/config.ts
+
 # Expo
 .expo/
 dist/

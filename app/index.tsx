@@ -15,10 +15,11 @@ import { API_URL } from "../utils/config";
 type Restaurant = {
   id_restaurant: number;
   restaurant_name: string;
-  description: string;
+  description?: "Merienda" | "Bodegon" | "Restaurante" | "Bar" | "Comida Rapida" | string;
   menu_link: string;
   latitude: number;   // por si vienen nulos en la primera migración
   longitude: number;
+  
 };
 
 // Región con accuracy opcional (para el círculo)
@@ -30,13 +31,40 @@ export default function Map() {
   const [menu_link, setMenu_link] = useState<string | null>(null);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const mapRef = useRef<MapView>(null);
-
+  const [selectedMarker, setSelectedMarker] = useState<number | null>(null);
+  
   // --- NUEVO: región del usuario ---
   const [region, setRegion] = useState<RegionWithAccuracy | null>(null);
 
   const insets = useSafeAreaInsets();
   // topOffset ensures the overlay sits below the notch/status bar
   const topOffset = insets.top + 10; // tweak +10 or +12 for spacing
+
+  const [categoryOpen, setCategoryOpen] = useState(false);     // si el menú está abierto
+  const [selectedCat, setSelectedCat] = useState< "Todos" | "Merienda" | "Bodegon" | "Restaurante" | "Bar" | "Comida Rapida">("Todos");
+
+  const CATEGORIES: Array<typeof selectedCat> = [
+  "Todos",
+  "Merienda",
+  "Bodegon",
+  "Restaurante",
+  "Bar",
+  "Comida Rapida",
+];
+
+  const normalize = (s: string) =>  //otra implementacion del filter
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  const isCategoryMatch = (desc: string | undefined | null) => {
+    if (selectedCat === "Todos") return true;
+    if (!desc) return false;
+    // match *exacto* contra la categoría elegida, ignorando acentos/case
+    return normalize(desc) === normalize(selectedCat);
+  };
 
   // 1) pedir ubicación y setear initialRegion
   useEffect(() => {
@@ -76,15 +104,18 @@ export default function Map() {
   );
 
   // 3) filtrados (tu lógica)
-  const filtrados = restaurants.filter((r) =>
-    r.restaurant_name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .includes(
-        filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      )
-  );
+  const filtrados = restaurants
+    .filter((r) =>
+      r.restaurant_name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .includes(
+          filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        )
+    )
+    .filter((r) => isCategoryMatch(r.description));
+
 
   const centerOnUser = () => {
   if (!region || !mapRef.current) return;
@@ -131,9 +162,9 @@ export default function Map() {
               />
             )}
             
-            {/* Markers de restaurantes (fork & knife si ya los pusiste) */}
-            {restaurants
-              .filter(r => r.latitude != null && r.longitude != null) // <-- evita null
+            {/* Markers de restaurantes */}
+            {filtrados
+              .filter(r => r.latitude != null && r.longitude != null)
               .map(r => (
                 <Marker
                   key={r.id_restaurant}
@@ -143,10 +174,20 @@ export default function Map() {
                   }}
                   title={r.restaurant_name}
                   description={r.description}
-                  onPress={() => setMenu_link(r.menu_link)}
+                  onPress={() => {
+                    if (selectedMarker === r.id_restaurant) {
+                      // segundo toque → abre el menú
+                      setMenu_link(r.menu_link);
+                      setSelectedMarker(null); // resetea después de abrir
+                    } else {
+                      // primer toque → solo selecciona el marker
+                      setSelectedMarker(r.id_restaurant);
+                    }
+                  }}
                 />
-              ))
-            }
+              ))}
+
+
 
           </MapView>
         ) : (
@@ -197,6 +238,53 @@ export default function Map() {
                 </Pressable>
               )}
             />
+          )}
+        </View>
+
+        <View style={styles.filterAnchor}>
+          <Pressable
+            onPress={() => setCategoryOpen((v) => !v)}
+            style={styles.filterButton}>
+            <Ionicons name="funnel" size={18} color="#0D3973" />
+            <Text style={styles.filterButtonText}>
+              {selectedCat === "Todos" ? "Categoría" : selectedCat}
+            </Text>
+          </Pressable>
+
+          {/* Backdrop para cerrar el dropdown tocando fuera */}
+          {categoryOpen && (
+            <Pressable
+              onPress={() => setCategoryOpen(false)}
+              style={StyleSheet.absoluteFillObject}
+            />
+          )}
+
+          {/* Menú desplegable */}
+          {categoryOpen && (
+            <View style={styles.dropdownCard}>
+              {CATEGORIES.map((cat) => (
+                <Pressable
+                  key={cat}
+                  onPress={() => {
+                    setSelectedCat(cat);
+                    setCategoryOpen(false);
+                  }}
+                  style={({ pressed }) => [
+                    styles.dropdownItem,
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownText,
+                      cat === selectedCat && styles.dropdownTextActive,
+                    ]}
+                  >
+                    {cat}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           )}
         </View>
 
@@ -355,4 +443,73 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 3,
   },
+    // --- FILTRO DE CATEGORÍA ---
+  filterAnchor: {
+    position: "absolute",
+    left: 20,     // misma distancia que el botón de centrado (right: 20)
+    bottom: 30,   // misma altura que el botón de centrado (bottom: 30)
+    zIndex: 20,
+  },
+
+
+  filterButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 35,          // circular
+    backgroundColor: "#1EA4D9", // mismo celeste que tu botón de ubicación
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+
+  filterButtonText: {
+    display: "none", // ya no mostramos texto dentro del círculo
+  },
+
+  dropdownCard: {
+    position: "absolute",
+    bottom: 60,           // aparece justo arriba del botón (ajustá según te guste)
+    left: 0,              // alineado a la izquierda del botón
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#188FD9",
+    paddingVertical: 6,
+    width: 180,
+    flexDirection: "column",      // asegura disposición vertical
+    alignItems: "flex-start",     // alinea el contenido a la izquierda
+    justifyContent: "flex-start", // alinea los elementos hacia arriba
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    zIndex: 30,
+  },
+
+
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    width: "100%",               // que ocupen todo el ancho del menú
+    alignItems: "flex-start",    // texto alineado a la izquierda
+  },
+
+  dropdownText: {
+    color: "#0D3973",
+    fontSize: 16,
+    textAlign: "left",           // texto alineado a la izquierda
+  },
+
+
+  dropdownTextActive: {
+    fontWeight: "700",
+    color: "#116EBF",
+  },
+
+
+  
 });
