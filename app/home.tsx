@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 
+import { clearCredentials, getToken, getUsername, saveToken, saveUserID, saveUsername } from "@/utils/authStorage";
 import { API_URL } from '../utils/config';
 
 function CreateModal() {
+
+  const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
+
   const [logInModalVisible, setLogInModalVisible] = useState(false);
   const [signUpModalVisible, setSignUpModalVisible] = useState(false);
 
@@ -13,6 +17,24 @@ function CreateModal() {
 
   const [logInIdentifier, setLogInIdentifier] = useState("");
   const [logInPassword, setLogInPassword] = useState("");
+
+  const [areWeLoggedIn, setAreWeLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const token = await getToken();
+      setAreWeLoggedIn(!!token); // true if token exists
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (areWeLoggedIn) {
+        const savedUsername = await getUsername();
+        setLoggedInUsername(savedUsername);
+      }
+    })();
+  }, [areWeLoggedIn]);
 
   const handleLogInRequest = async () => {
     try {
@@ -36,10 +58,20 @@ function CreateModal() {
         return; // stop execution
       }
 
-      console.log("Successfully logged in:", data);
+      // success
+
+      // store token
+      await saveToken(data.accessToken);
+      await saveUsername(data.user.username)
+      await saveUserID(data.user.id);
+
+      setAreWeLoggedIn(true); 
+
       // reset
       clearInputs();
       setLogInModalVisible(false);
+
+      console.log("Successfully logged in:", data);
       Alert.alert("Log in successful", "You can now upload QRs.");
     } catch (error) {
       console.error("Network or unexpected error:", error);
@@ -71,10 +103,19 @@ function CreateModal() {
       }
 
       // Success
-      console.log("Successfully signed up:", data);
+      
+      // store token
+      await saveToken(data.accessToken);
+      await saveUsername(data.user.username)
+      await saveUserID(data.user.id);
+
+      setAreWeLoggedIn(true); 
+      
       clearInputs();
-      Alert.alert("Signup successful", "You can now log in.");
       setSignUpModalVisible(false);
+
+      console.log("Successfully signed up, and logged in:", data);
+      Alert.alert("Signup successful");
     } catch (error) {
       console.error("Network or unexpected error:", error);
       Alert.alert("Signup failed", "Network or unexpected error");
@@ -90,7 +131,25 @@ function CreateModal() {
     setPassword("");
   }
 
-  return (
+  async function logOut() {
+    await clearCredentials();
+    setAreWeLoggedIn(false); 
+  }
+
+  if (areWeLoggedIn === null) {
+    // Still checking storage
+    return null; // or a loading spinner maybe(?
+  }
+
+  return areWeLoggedIn ? (
+    <View style={styles.containerStyles}>
+      <Text style={styles.textStyle}>Hi { loggedInUsername }</Text>
+
+      <Pressable style={styles.cancelButtonStyles} onPress={() => logOut()}>
+        <Text style={styles.buttonTextStyle}>Log out</Text>
+      </Pressable>
+    </View>
+   ) : (
     <View style={styles.containerStyles}>
       <Text style={styles.textStyle} >Please log into your account</Text>
 
