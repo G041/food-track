@@ -11,7 +11,7 @@ type Props = {
     compassPosition?: Point | undefined,
 }
 
-export default function IOSMap({ region, renderMarkers, compassPosition }: Props) {
+export default function MapViewer({ region, renderMarkers, compassPosition }: Props) {
 
     const mapRef = useRef<MapView>(null);
 

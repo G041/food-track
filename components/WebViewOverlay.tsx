@@ -55,23 +55,3 @@ export default function WebViewOverlay({ url, setURL }: Props) {
         </Modal>
     )
 }
-
-const styles = StyleSheet.create({
-  map: {
-    flex: 1,
-  },
-
-  locationButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: "#1EA4D9", // celeste brillante
-    padding: 14,
-    borderRadius: 40,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
-  },
-
-});

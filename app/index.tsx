@@ -6,7 +6,7 @@ import { Marker } from "react-native-maps";
 import { type Category } from "@/constants/categories";
 
 import DropDownMenu from "@/components/DropDownMenu";
-import IOSMap from "@/components/IOSMap";
+import MapViewer from "@/components/MapViewer";
 import WebViewOverlay from "@/components/WebViewOverlay";
 import { useFetchRestaurants } from "@/hooks/useFetchRestaurants";
 import { useUserRegion } from "@/hooks/useUserRegion";
@@ -95,7 +95,7 @@ export default function Map() {
       <View style={{ flex: 1 }}>
         {/* MAPA */}
         {Platform.OS === "ios" ? (
-          <IOSMap
+          <MapViewer
             region={region}
             compassPosition={{ x: -10, y: insets.top + 20 }}
             renderMarkers={restaurantMarkerGenerator}
@@ -115,7 +115,7 @@ export default function Map() {
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.inputStyle}
-              placeholderTextColor="grey"
+              placeholderTextColor="#ffffff83"
               placeholder="Buscar restaurante..."
               value={filtro}
               onChangeText={setFiltro}
@@ -187,14 +187,14 @@ const styles = StyleSheet.create({
   inputStyle: {
     height: 48,
     width: "100%",
-    backgroundColor: "#0D3973", // azul profundo
+    backgroundColor: "#2daefe12", // azul profundo
     borderRadius: 12,
     paddingLeft: 12,
     paddingRight: 44,
     fontSize: 18,
     marginBottom: 8,
-    borderWidth: 1.5,
-    borderColor: "#188FD9",
+    borderWidth: 0,
+    borderColor: "#0d2a51ff",
     color: "#FFFFFF",
   },
 
