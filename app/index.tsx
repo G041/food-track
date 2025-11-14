@@ -1,11 +1,8 @@
 import { Ionicons } from "@expo/vector-icons"; //para el boton que centra la ubicacion
-import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { FlatList, Image, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import { WebView } from "react-native-webview";
 
-import * as Location from "expo-location";
-import type { Region } from "react-native-maps";
 import MapView, { Circle, Marker } from "react-native-maps";
 
 import { type Category } from "@/constants/categories";
@@ -13,20 +10,9 @@ import { type Category } from "@/constants/categories";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import DropDownMenu from "@/components/DropDownMenu";
-import { API_URL } from "../utils/config";
+import { useFetchRestaurants } from "@/hooks/useFetchRestaurants";
+import { useUserRegion } from "@/hooks/useUserRegion";
 
-type Restaurant = {
-  id_restaurant: number;
-  restaurant_name: string;
-  description?: "Merienda" | "Bodegon" | "Restaurante" | "Bar" | "Comida Rapida" | string;
-  menu_link: string;
-  latitude: number;   // por si vienen nulos en la primera migración
-  longitude: number;
-  
-};
-
-// Región con accuracy opcional (para el círculo)
-type RegionWithAccuracy = Region & { accuracy?: number | null }; 
 
 export default function Map() {
 
@@ -35,16 +21,18 @@ export default function Map() {
   // --- estado existente tuyo (filtro, modal, restaurantes, etc.) ---
   const [filtro, setFiltro] = useState("");
   const [menu_link, setMenu_link] = useState<string | null>(null);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const mapRef = useRef<MapView>(null);
   const [selectedMarker, setSelectedMarker] = useState<number | null>(null);
-  
-  // --- NUEVO: región del usuario ---
-  const [region, setRegion] = useState<RegionWithAccuracy | null>(null);
 
   const insets = useSafeAreaInsets();
   // topOffset ensures the overlay sits below the notch/status bar
   const topOffset = insets.top + 10; // tweak +10 or +12 for spacing
+
+  // establezco localizacion de usuario
+  const { region } = useUserRegion();
+
+  // fetch de restaurantes 
+  const { restaurants } = useFetchRestaurants();
 
   const normalize = (s: string) =>  //otra implementacion del filter
     s
@@ -59,43 +47,6 @@ export default function Map() {
     // match *exacto* contra la categoría elegida, ignorando acentos/case
     return normalize(desc) === normalize(selectedCat);
   };
-
-  // 1) pedir ubicación y setear initialRegion
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.warn("Permiso de ubicación denegado");
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      setRegion({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-        accuracy: loc.coords.accuracy, // ahora coincide con el tipo
-      });
-    })();   
-  }, []);
-
-  // 2) tu fetch de restaurantes (igual que antes)
-  useFocusEffect(
-    useCallback(() => {
-      async function fetchRestaurants() {
-        try {
-          const res = await fetch(`${API_URL}/restaurants`);
-          const data = await res.json();
-          setRestaurants(data);
-        } catch (err) {
-          console.error("Error fetching restaurants:", err);
-        }
-      }
-      fetchRestaurants();
-    }, [])
-  );
 
   // 3) filtrados (tu lógica)
   const filtrados = restaurants
@@ -112,17 +63,17 @@ export default function Map() {
 
 
   const centerOnUser = () => {
-  if (!region || !mapRef.current) return;
+    if (!region || !mapRef.current) return;
 
-  mapRef.current.animateToRegion(
-    {
-      latitude: region.latitude,
-      longitude: region.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    },
-    500 // duración animación en ms
-    );
+    mapRef.current.animateToRegion(
+      {
+        latitude: region.latitude,
+        longitude: region.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+      500 // duración animación en ms
+      );
   };
 
   // Si aún no tengo region, podés mostrar un placeholder simple
@@ -180,9 +131,6 @@ export default function Map() {
                   }}
                 />
               ))}
-
-
-
           </MapView>
         ) : (
           <View style={{ 
