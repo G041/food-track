@@ -33,7 +33,7 @@ function AppTabs() {
           elevation: 5,
           paddingTop: 5,
         },
-        tabBarActiveTintColor: "#1EA4D9", // activo: azul brillante
+        tabBarActiveTintColor: "#62c6eeff", // activo: azul brillante
         tabBarInactiveTintColor: "#188FD9", // inactivo: celeste medio
         tabBarLabelStyle: {
           fontSize: 12,

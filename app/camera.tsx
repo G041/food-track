@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Keyboard, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from "react-native";
 import { useSelector } from "react-redux";
 
-export default function App() {
+export default function Camera() {
 
   const router = useRouter();
 
@@ -43,28 +43,28 @@ export default function App() {
     <View style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.cameraContainer}>
-          <CameraView
-            style={styles.camera}
-            ref={ref}
-            facing={facing}
-            responsiveOrientationWhenOrientationLocked
-            onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
-            barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-          />
+            <CameraView
+              style={styles.camera}
+              zoom={0.14386}
+              ref={ref}
+              facing={facing}
+              responsiveOrientationWhenOrientationLocked
+              onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
+              barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+            />
 
-          <View style={styles.shutterContainer}>
-            <Pressable style={styles.flipBtn} onPress={toggleFacing}>
-              <FontAwesome6 name="rotate-left" size={32} color="#fff" />
-            </Pressable>
-          </View>
+            <View style={styles.shutterContainer}>
+              <Pressable style={styles.flipBtn} onPress={toggleFacing}>
+                <FontAwesome6 name="rotate-left" size={32} color="#fff" />
+              </Pressable>
+            </View>
 
-          <RestaurantFormModal
-            visible={scanned}
-            initialMenuLink={scannedURL}
-            coords={coords}
-            setScanned={setScanned}
-          />
-          
+            <RestaurantFormModal
+              visible={scanned}
+              initialMenuLink={scannedURL}
+              coords={coords}
+              setScanned={setScanned}
+            />
         </View>
       </TouchableWithoutFeedback>
     </View>
@@ -94,8 +94,9 @@ const styles = StyleSheet.create({
   flipBtn: {
     position: "absolute",
     right: 30,
+    bottom: -10,
     backgroundColor: "rgba(17, 110, 191, 0.8)", // azul intermedio translúcido
-    padding: 10,
+    padding: 15,
     borderRadius: 50,
   },
 
