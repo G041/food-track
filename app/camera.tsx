@@ -1,14 +1,13 @@
+import { useCameraScanner } from "@/hooks/useCameraScanner";
 import { AppDispatch, RootState } from "@/store";
 import { addRestaurantThunk } from "@/store/restaurantsSlice";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { Picker } from "@react-native-picker/picker";
 import { unwrapResult } from "@reduxjs/toolkit";
-import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import * as Location from "expo-location";
+import { CameraView } from "expo-camera";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
-  Alert,
   Keyboard,
   Modal,
   Pressable,
@@ -16,32 +15,26 @@ import {
   Text,
   TextInput,
   TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function App() {
 
   const router = useRouter();
-  const [permission, requestPermission] = useCameraPermissions();
-  const ref = useRef<CameraView>(null);
-  const [facing, setFacing] = useState<CameraType>("back");
-  const [scanned, setScanned] = useState(false);
-  const [seleccionado, setSeleccionado] = useState<string | null>(null);
-
-  const [restaurant_name, setRestaurant_name] = useState("");
-  const [description, setDescription] = useState("");
-  const [menu_link, setMenu_link] = useState("");
-  const [location, setLocation] = useState("");
-  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-
-  const [showPicker, setShowPicker] = useState(false);
-
   const dispatch = useDispatch<AppDispatch>();
 
   // read auth state from Redux
   const isLoggedIn = useSelector((s: RootState) => s.auth.isLoggedIn);
   const isLoading = useSelector((s: RootState) => s.auth.isLoading);
+
+  const [restaurant_name, setRestaurant_name] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+
+  const [showPicker, setShowPicker] = useState(false);
+
+  const { permission, requestPermission, ref, facing, scanned, setScanned, toggleFacing, handleBarcodeScanned, scannedURL, coords } = useCameraScanner();
 
   if (!permission) return null;
 
@@ -58,42 +51,16 @@ export default function App() {
   function clearRestaurant() {
     setRestaurant_name("");
     setDescription("");
-    setMenu_link("");
     setLocation("");
-    setCoords(null);
-    setSeleccionado(null);
     setScanned(false);
-  };
-
-  const toggleFacing = () => {
-    setFacing((prev) => (prev === "back" ? "front" : "back"));
-  };
-
-  const handleBarcodeScanned = async ({ type, data }: { type: string; data: string }) => {
-    if (scanned) return;
-    setScanned(true);
-    console.log(`Scanned ${type}: ${data}`);
-    setMenu_link(data);
-    setSeleccionado(data);
-
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permiso denegado", "Se guardará sin coordenadas.");
-      setCoords(null);
-      return;
-    }
-    const pos = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-    setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
   };
 
   const handleAddRestaurant = async () => {
     const newRestaurant = {
-      restaurant_name,
-      description,
-      menu_link,
-      location,
+      restaurant_name: restaurant_name,
+      description: description,
+      menu_link: scannedURL,
+      location: location,
       latitude: coords?.latitude ?? null,
       longitude: coords?.longitude ?? null,
     };
@@ -122,9 +89,7 @@ export default function App() {
           facing={facing}
           responsiveOrientationWhenOrientationLocked
           onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"],
-          }}
+          barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
         />
 
         <View style={styles.shutterContainer}>
@@ -133,13 +98,13 @@ export default function App() {
           </Pressable>
         </View>
 
-        <Modal visible={seleccionado !== null} transparent={false}>
+        <Modal visible={scanned} transparent={false}>
           <View style={styles.modalBackground}>
             <View style={styles.modalContainer}>
-              {seleccionado && (
+              {scanned && (
                 <>
                   <View style={styles.qrPreview}>
-                    <Text style={styles.qrText}>{seleccionado}</Text>
+                    <Text style={styles.qrText}>{scannedURL}</Text>
                   </View>
 
                   <TextInput
@@ -200,7 +165,7 @@ export default function App() {
                   <Pressable
                     style={styles.cancelButton}
                     onPress={() => {
-                      setSeleccionado(null);
+                      clearRestaurant();
                       setScanned(false);
                     }}
                   >
