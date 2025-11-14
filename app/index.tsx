@@ -1,17 +1,16 @@
-import { Ionicons } from "@expo/vector-icons"; //para el boton que centra la ubicacion
-import { useRef, useState } from "react";
-import { FlatList, Image, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
-import { WebView } from "react-native-webview";
+import { useState } from "react";
+import { FlatList, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 
-import MapView, { Circle, Marker } from "react-native-maps";
+import { Marker } from "react-native-maps";
 
 import { type Category } from "@/constants/categories";
 
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 import DropDownMenu from "@/components/DropDownMenu";
+import IOSMap from "@/components/IOSMap";
+import WebViewOverlay from "@/components/WebViewOverlay";
 import { useFetchRestaurants } from "@/hooks/useFetchRestaurants";
 import { useUserRegion } from "@/hooks/useUserRegion";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 export default function Map() {
@@ -21,16 +20,15 @@ export default function Map() {
   // --- estado existente tuyo (filtro, modal, restaurantes, etc.) ---
   const [filtro, setFiltro] = useState("");
   const [menu_link, setMenu_link] = useState<string | null>(null);
-  const mapRef = useRef<MapView>(null);
   const [selectedMarker, setSelectedMarker] = useState<number | null>(null);
 
   const insets = useSafeAreaInsets();
+  
   // topOffset ensures the overlay sits below the notch/status bar
   const topOffset = insets.top + 10; // tweak +10 or +12 for spacing
 
   // establezco localizacion de usuario
   const { region } = useUserRegion();
-
   // fetch de restaurantes 
   const { restaurants } = useFetchRestaurants();
 
@@ -61,77 +59,47 @@ export default function Map() {
     )
     .filter((r) => isCategoryMatch(r.description));
 
-
-  const centerOnUser = () => {
-    if (!region || !mapRef.current) return;
-
-    mapRef.current.animateToRegion(
-      {
-        latitude: region.latitude,
-        longitude: region.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      },
-      500 // duración animación en ms
-      );
-  };
-
-  // Si aún no tengo region, podés mostrar un placeholder simple
-  if (!region) return <View style={{ flex: 1, backgroundColor: "#0b1523" }} />;
+  const restaurantMarkerGenerator = () => {
+    return (
+      <>
+        {filtrados
+            .filter(r => r.latitude != null && r.longitude != null)
+            .map(r => (
+                <Marker
+                    key={r.id_restaurant}
+                    coordinate={{
+                        latitude: r.latitude as number,
+                        longitude: r.longitude as number,
+                    }}
+                    title={r.restaurant_name}
+                    description={r.description}
+                    onPress={() => {
+                        if (selectedMarker === r.id_restaurant) {
+                            // segundo toque → abre el menú
+                            setMenu_link(r.menu_link);
+                            setSelectedMarker(null); // resetea después de abrir
+                        } else {
+                            // primer toque → solo selecciona el marker
+                            setSelectedMarker(r.id_restaurant);
+                        }
+                    }}
+                />)
+            )
+        }
+      </>
+    )
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ flex: 1 }}>
         {/* MAPA */}
         {Platform.OS === "ios" ? (
-          <MapView
-            style={styles.map}
-            initialRegion={region}
-            ref = {mapRef}
-            showsUserLocation
-            showsPointsOfInterest={false}
-            mapType="mutedStandard"
-            compassOffset={{ x: -10, y: insets.top + 20 }}
-          >
-            <Pressable onPress={centerOnUser} style={styles.locationButton}>
-              <Ionicons name="locate" size={28} color="black" />
-            </Pressable>
-            {/* Círculo de precisión opcional */}
-            {region.accuracy !== undefined && (
-              <Circle
-                center={{ latitude: region.latitude, longitude: region.longitude }}
-                radius={Math.max(region.accuracy ?? 25, 25)} // maneja null/undefined
-                fillColor="rgba(0,122,255,0.15)"
-                strokeColor="rgba(0,122,255,0.6)"
-                strokeWidth={2}
-              />
-            )}
-            
-            {/* Markers de restaurantes */}
-            {filtrados
-              .filter(r => r.latitude != null && r.longitude != null)
-              .map(r => (
-                <Marker
-                  key={r.id_restaurant}
-                  coordinate={{
-                    latitude: r.latitude as number,
-                    longitude: r.longitude as number,
-                  }}
-                  title={r.restaurant_name}
-                  description={r.description}
-                  onPress={() => {
-                    if (selectedMarker === r.id_restaurant) {
-                      // segundo toque → abre el menú
-                      setMenu_link(r.menu_link);
-                      setSelectedMarker(null); // resetea después de abrir
-                    } else {
-                      // primer toque → solo selecciona el marker
-                      setSelectedMarker(r.id_restaurant);
-                    }
-                  }}
-                />
-              ))}
-          </MapView>
+          <IOSMap
+            region={region}
+            compassPosition={{ x: -10, y: insets.top + 20 }}
+            renderMarkers={restaurantMarkerGenerator}
+          />
         ) : (
           <View style={{ 
             flex: 1, 
@@ -182,74 +150,24 @@ export default function Map() {
             />
           )}
         </View>
-
+        
+        {/* Boton de filtros */}
         <DropDownMenu
           selectedCat={selectedCat}
           setSelectedCat={setSelectedCat}
-        >
-        </DropDownMenu>
+        />
 
-        {/* Modal menú (lo tuyo) */}
-        <Modal
-          visible={menu_link !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setMenu_link(null)} // Android back button
-        >
-          <View style={{ flex: 1 }}>
-            {/* BACKDROP that closes on tap */}
-            <Pressable
-              onPress={() => setMenu_link(null)}
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                backgroundColor: "rgba(0,0,0,0.6)",
-              }}
-            />
-
-            {/* LAYER ABOVE THE BACKDROP */}
-            <View
-              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-              pointerEvents="box-none" // don't block backdrop where there's no card
-            >
-              {/* CARD — do NOT use Pressable here */}
-              <View
-                style={{
-                  width: "95%",
-                  height: "85%",
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  backgroundColor: "white",
-                }}
-              >
-                {Platform.OS === "web" ? (
-                  menu_link && (
-                    <iframe
-                      src={menu_link}
-                      style={{ width: "100%", height: "100%", border: "none" }}
-                    />
-                  )
-                ) : (
-                  menu_link && (
-                    <WebView
-                      source={{ uri: menu_link }}
-                      style={{ flex: 1 }}
-                    />
-                  )
-                )}
-              </View>
-            </View>
-          </View>
-        </Modal>
-
+        {/* Display de menu */}
+        <WebViewOverlay
+          url={menu_link}
+          setURL={setMenu_link}
+        />
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  map: {
-    flex: 1,
-  },
 
   overlay: {
     position: "absolute",
@@ -278,19 +196,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#188FD9",
     color: "#FFFFFF",
-  },
-
-  locationButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: "#1EA4D9", // celeste brillante
-    padding: 14,
-    borderRadius: 40,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
   },
 
   clearButton: {

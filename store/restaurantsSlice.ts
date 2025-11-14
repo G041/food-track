@@ -2,7 +2,7 @@ import { API_URL } from "@/utils/config";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState } from "./authSlice";
 
-export interface Restaurant {
+export interface RestaurantInt {
   id_restaurant?: string; // if returned by backend
   restaurant_name: string;
   description: string;
@@ -13,7 +13,7 @@ export interface Restaurant {
 }
 
 export interface RestaurantsState {
-  list: Restaurant[];
+  list: RestaurantInt[];
   isLoading: boolean;
   error: string | null;
 }
@@ -26,8 +26,8 @@ const initialState: RestaurantsState = {
 
 // Thunk for adding a restaurant
 export const addRestaurantThunk = createAsyncThunk<
-        Restaurant, // return type
-        Restaurant, // argument type
+        RestaurantInt, // return type
+        RestaurantInt, // argument type
         { rejectValue: string, state: { auth: AuthState } }
     >("restaurants/addRestaurant", async (newRestaurant, { rejectWithValue, getState }) => {
         try {
@@ -64,7 +64,7 @@ const restaurantsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(addRestaurantThunk.fulfilled, (state, action: PayloadAction<Restaurant>) => {
+      .addCase(addRestaurantThunk.fulfilled, (state, action: PayloadAction<RestaurantInt>) => {
         state.isLoading = false;
         state.list.push(action.payload);
       })

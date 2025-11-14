@@ -2,11 +2,10 @@ import * as Location from "expo-location";
 import { useEffect, useState } from "react";
 import { Region } from "react-native-maps";
 
+// Región con accuracy opcional (para el círculo)
+type RegionWithAccuracy = Region & { accuracy?: number | null }; 
 
 export function useUserRegion() {
-    
-    // Región con accuracy opcional (para el círculo)
-    type RegionWithAccuracy = Region & { accuracy?: number | null }; 
 
     // --- NUEVO: región del usuario ---
     const [region, setRegion] = useState<RegionWithAccuracy | null>(null);
@@ -37,3 +36,6 @@ export function useUserRegion() {
         region
     };
 }
+
+export type { RegionWithAccuracy };
+

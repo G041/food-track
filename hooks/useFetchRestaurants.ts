@@ -1,16 +1,7 @@
-import { Category } from "@/constants/categories";
+import { Restaurant } from "@/constants/restaurant";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { API_URL } from "../utils/config";
-
-type Restaurant = {
-  id_restaurant: number;
-  restaurant_name: string;
-  description?: Category | string;
-  menu_link: string;
-  latitude: number;   
-  longitude: number;
-};
 
 export function useFetchRestaurants() {
     
