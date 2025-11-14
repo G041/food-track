@@ -33,7 +33,7 @@ function AppTabs() {
           elevation: 5,
           paddingTop: 5,
         },
-        tabBarActiveTintColor: "#1EA4D9", // activo: azul brillante
+        tabBarActiveTintColor: "#62c6eeff", // activo: azul brillante
         tabBarInactiveTintColor: "#188FD9", // inactivo: celeste medio
         tabBarLabelStyle: {
           fontSize: 12,
@@ -45,7 +45,7 @@ function AppTabs() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Map",
+          title: "Mapa",
           tabBarIcon: ({ color, size }) => (
             <FontAwesome5 name="map-marked-alt" size={size} color={color} />
           ),
@@ -54,7 +54,7 @@ function AppTabs() {
       <Tabs.Screen
         name="camera"
         options={{
-          title: "Scan a QR",
+          title: "Escaneá un QR",
           tabBarIcon: ({ color, size }) => (
             <FontAwesome5 name="qrcode" size={size} color={color} />
           ),
@@ -63,7 +63,7 @@ function AppTabs() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Profile",
+          title: "Perfil",
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="home" size={size} color={color} />
           ),
