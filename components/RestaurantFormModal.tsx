@@ -1,24 +1,22 @@
+import { AppDispatch } from "@/store";
+import { addRestaurantThunk } from "@/store/restaurantsSlice";
+import { Picker } from "@react-native-picker/picker";
+import { unwrapResult } from "@reduxjs/toolkit";
 import { useState } from "react";
-import { Modal, StyleSheet } from "react-native";
-import { View } from "react-native-reanimated/lib/typescript/Animated";
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useDispatch } from "react-redux";
 
 type Props = {
   visible: boolean;
-  initialMenuLink?: string | null;
+  setScanned: React.Dispatch<React.SetStateAction<boolean>>;
+  initialMenuLink: string;
   coords?: { latitude: number; longitude: number } | null;
-  onCancel: () => void;
-  onSubmit: (payload: {
-    restaurant_name: string;
-    description: string;
-    menu_link: string;
-    location: string;
-    latitude: number | null;
-    longitude: number | null;
-  }) => Promise<void> | void;
 };
 
-export default function RestaurantFormModal({ visible, initialMenuLink, coords, onCancel, onSubmit }: Props) {
+export default function RestaurantFormModal({ visible, initialMenuLink, coords, setScanned }: Props) {
     
+    const dispatch = useDispatch<AppDispatch>();
+
     const [restaurant_name, setRestaurant_name] = useState("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
@@ -29,83 +27,99 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
         setRestaurant_name("");
         setDescription("");
         setLocation("");
+
+        setScanned(false);
+    };
+
+    const handleAddRestaurant = async () => {
+        const newRestaurant = {
+            restaurant_name: restaurant_name,
+            description: description,
+            menu_link: initialMenuLink,
+            location: location,
+            latitude: coords?.latitude ?? null,
+            longitude: coords?.longitude ?? null,
+        };
+
+        try {
+            const action = await dispatch(addRestaurantThunk(newRestaurant));
+            const result = unwrapResult(action); // optional: throws if rejected
+
+            console.log("Restaurant added successfully:", result);
+
+            // reset forms
+            clearRestaurant();
+        } catch (err) {
+            console.error("Failed to add restaurant:", err);
+            clearRestaurant();
+        }
     };
 
     return (
-        <Modal transparent={false}>
+        <Modal transparent={false} visible={visible}>
             <View style={styles.modalBackground}>
-                <View style={styles.modalContainer}>
-                    <>
-                        <View style={styles.qrPreview}>
-                            <Text style={styles.qrText}>{scannedURL}</Text>
-                        </View>
-
-                        <TextInput
-                            placeholder="Restaurant name..."
-                            value={restaurant_name}
-                            onChangeText={setRestaurant_name}
-                            style={styles.input}
-                            placeholderTextColor="#aaa"
-                        />
-                        <Pressable
-                            onPress={() => setShowPicker(true)}
-                            style={styles.input}
-                        >
-                            <Text style={{ color: description ? "white" : "#aaa", fontSize: 16 }}>
-                            {description || "Selecciona una categoria..."}
-                            </Text>
-                        </Pressable>
-
-                        {/* Modal que muestra el Picker */}
-                        <Modal
-                            visible={showPicker}
-                            transparent
-                            animationType="slide"
-                            onRequestClose={() => setShowPicker(false)}
-                        >
-                            <View style={styles.modalOverlay}>
-                            <View style={styles.pickerModal}>
-                                <Picker
-                                selectedValue={description}
-                                onValueChange={(val) => {
-                                    setDescription(val);
-                                    setShowPicker(false); // cerrar al elegir
-                                }}
-                                style={styles.picker}
-                                dropdownIconColor="#fff"
-                                >
-                                <Picker.Item label="Merienda" value="Merienda" />
-                                <Picker.Item label="Bodegon" value="Bodegon" />
-                                <Picker.Item label="Restaurante" value="Restaurante" />
-                                <Picker.Item label="Bar" value="Bar" />
-                                <Picker.Item label="Comida Rápida" value="Comida rapida" />
-                                </Picker>
-                            </View>
-                            </View>
-                        </Modal>
-                        <TextInput
-                            placeholder="Location..."
-                            value={location}
-                            onChangeText={setLocation}
-                            style={styles.input}
-                            placeholderTextColor="#aaa"
-                        />
-
-                        <Pressable style={styles.primaryButton} onPress={handleAddRestaurant}>
-                            <Text style={styles.buttonText}>Add Restaurant</Text>
-                        </Pressable>
-
-                        <Pressable
-                            style={styles.cancelButton}
-                            onPress={() => {
-                            clearRestaurant();
-                            setScanned(false);
-                            }}
-                        >
-                            <Text style={styles.buttonText}>Cancel</Text>
-                        </Pressable>
-                    </>
+                <View style={styles.qrPreview}>
+                    <Text style={styles.qrText}>{initialMenuLink}</Text>
                 </View>
+
+                <TextInput
+                    placeholder="Restaurant name..."
+                    value={restaurant_name}
+                    onChangeText={setRestaurant_name}
+                    style={styles.input}
+                    placeholderTextColor="#aaa"
+                />
+                <Pressable
+                    onPress={() => setShowPicker(true)}
+                    style={styles.input}
+                >
+                    <Text style={{ color: description ? "white" : "#aaa", fontSize: 16 }}>
+                    {description || "Selecciona una categoria..."}
+                    </Text>
+                </Pressable>
+
+                {/* Modal que muestra el Picker */}
+                <Modal
+                    visible={showPicker}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setShowPicker(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                    <View style={styles.pickerModal}>
+                        <Picker
+                        selectedValue={description}
+                        onValueChange={(val) => {
+                            setDescription(val);
+                            setShowPicker(false); // cerrar al elegir
+                        }}
+                        style={styles.picker}
+                        dropdownIconColor="#fff"
+                        >
+                        <Picker.Item label="Merienda" value="Merienda" />
+                        <Picker.Item label="Bodegon" value="Bodegon" />
+                        <Picker.Item label="Restaurante" value="Restaurante" />
+                        <Picker.Item label="Bar" value="Bar" />
+                        <Picker.Item label="Comida Rápida" value="Comida rapida" />
+                        </Picker>
+                    </View>
+                    </View>
+                </Modal>
+                <TextInput
+                    placeholder="Location..."
+                    value={location}
+                    onChangeText={setLocation}
+                    style={styles.input}
+                    placeholderTextColor="#aaa"
+                />
+
+                <Pressable style={styles.primaryButton} onPress={handleAddRestaurant}>
+                    <Text style={styles.buttonText}>Add Restaurant</Text>
+                </Pressable>
+
+                <Pressable style={styles.cancelButton} onPress={clearRestaurant}>
+                    <Text style={styles.buttonText}>Cancel</Text>
+                </Pressable>
             </View>
         </Modal>
     );
@@ -143,7 +157,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "#0D3973",
   },
 
   modalContainer: {

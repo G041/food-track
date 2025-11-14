@@ -89,7 +89,7 @@ function CreateModal() {
 
   return isLoggedIn ? (
     <View style={styles.containerStyles}>
-      <Text style={styles.textStyle}>Hi { reduxUsername }</Text>
+      <Text style={styles.textStyle}>Hola { reduxUsername }!</Text>
 
       <Pressable style={styles.cancelButtonStyles} onPress={handleLogout}>
         <Text style={styles.buttonTextStyle}>Log out</Text>
@@ -97,7 +97,7 @@ function CreateModal() {
     </View>
    ) : (
     <View style={styles.containerStyles}>
-      <Text style={styles.textStyle} >Please log into your account</Text>
+      <Text style={styles.textStyle} >Por favor ingresá a tu cuenta</Text>
 
       <Pressable style={styles.buttonStyles} onPress={() => setLogInModalVisible(true)}>
         <Text style={styles.buttonTextStyle}>Log in</Text>
@@ -114,7 +114,7 @@ function CreateModal() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={styles.containerStyles}>
                 <TextInput
-                  placeholder="Enter your email or username..."
+                  placeholder="Ingresá tu email o nombre de usuario..."
                   value={logInIdentifier}
                   onChangeText={setLogInIdentifier}
                   autoCorrect={false}         
@@ -123,7 +123,7 @@ function CreateModal() {
                   placeholderTextColor="white"
                 />
                 <TextInput
-                  placeholder="Enter your password..."
+                  placeholder="Ingresá tu contraseña..."
                   value={logInPassword}
                   onChangeText={setLogInPassword}
                   autoCorrect={false}         
@@ -153,7 +153,7 @@ function CreateModal() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={styles.containerStyles}>
                 <TextInput
-                  placeholder="Enter your email..."
+                  placeholder="Ingresa tu email..."
                   value={email}
                   onChangeText={setEmail}
                   autoCorrect={false}         
@@ -162,7 +162,7 @@ function CreateModal() {
                   placeholderTextColor="white"
                 />
                 <TextInput
-                  placeholder="Enter your username..."
+                  placeholder="Ingresá tu nombre de usuario..."
                   value={username}
                   onChangeText={setUserName}
                   autoCorrect={false}         
@@ -171,7 +171,7 @@ function CreateModal() {
                   placeholderTextColor="white"
                 />
                 <TextInput
-                  placeholder="Enter your password..."
+                  placeholder="Ingresá tu contraseña..."
                   value={password}
                   onChangeText={setPassword}
                   autoCorrect={false}         
@@ -182,7 +182,7 @@ function CreateModal() {
                 />
 
                 <Pressable style={styles.buttonStyles} onPress={handleSignUpRequest}>
-                  <Text style={styles.buttonTextStyle}>Sign Up</Text>
+                  <Text style={styles.buttonTextStyle}>Sign up</Text>
                 </Pressable>
 
                 <Pressable style={styles.cancelButtonStyles} onPress={() => {setSignUpModalVisible(false); clearInputs()}}>

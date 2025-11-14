@@ -3,11 +3,11 @@ import * as Location from "expo-location";
 import { useCallback, useRef, useState } from "react";
 import { Alert } from "react-native";
 
-export function useCameraScanner() {
+export function useCameraScanner(scanned: boolean, setScanned: React.Dispatch<React.SetStateAction<boolean>>) {
     const [permission, requestPermission] = useCameraPermissions();
     const ref = useRef<CameraView | null>(null);
     const [facing, setFacing] = useState<CameraType>("back");
-    const [scanned, setScanned] = useState(false);
+    
     const [scannedURL, setScannedURL] = useState("");
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
@@ -38,8 +38,6 @@ export function useCameraScanner() {
         requestPermission,
         ref,
         facing,
-        scanned,
-        setScanned,
         toggleFacing,
         handleBarcodeScanned,
         scannedURL,
