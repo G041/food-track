@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useDispatch } from "react-redux";
 
+import { CATEGORIES } from "@/constants/categories";
+
 type Props = {
   visible: boolean;
   setScanned: React.Dispatch<React.SetStateAction<boolean>>;
@@ -96,11 +98,9 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
                         style={styles.picker}
                         dropdownIconColor="#fff"
                         >
-                        <Picker.Item label="Merienda" value="Merienda" />
-                        <Picker.Item label="Bodegon" value="Bodegon" />
-                        <Picker.Item label="Restaurante" value="Restaurante" />
-                        <Picker.Item label="Bar" value="Bar" />
-                        <Picker.Item label="Comida Rápida" value="Comida rapida" />
+                          {CATEGORIES.map(cat => (
+                            <Picker.Item key={cat} label={cat} value={cat} />
+                          ))}
                         </Picker>
                     </View>
                     </View>

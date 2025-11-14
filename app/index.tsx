@@ -8,8 +8,11 @@ import * as Location from "expo-location";
 import type { Region } from "react-native-maps";
 import MapView, { Circle, Marker } from "react-native-maps";
 
+import { type Category } from "@/constants/categories";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import DropDownMenu from "@/components/DropDownMenu";
 import { API_URL } from "../utils/config";
 
 type Restaurant = {
@@ -26,6 +29,9 @@ type Restaurant = {
 type RegionWithAccuracy = Region & { accuracy?: number | null }; 
 
 export default function Map() {
+
+  const [selectedCat, setSelectedCat] = useState<Category>("Todos"); // Category igual a: "Todos" | "Merienda" | "Bodegon" | ...
+
   // --- estado existente tuyo (filtro, modal, restaurantes, etc.) ---
   const [filtro, setFiltro] = useState("");
   const [menu_link, setMenu_link] = useState<string | null>(null);
@@ -39,18 +45,6 @@ export default function Map() {
   const insets = useSafeAreaInsets();
   // topOffset ensures the overlay sits below the notch/status bar
   const topOffset = insets.top + 10; // tweak +10 or +12 for spacing
-
-  const [categoryOpen, setCategoryOpen] = useState(false);     // si el menú está abierto
-  const [selectedCat, setSelectedCat] = useState< "Todos" | "Merienda" | "Bodegon" | "Restaurante" | "Bar" | "Comida Rapida">("Todos");
-
-  const CATEGORIES: Array<typeof selectedCat> = [
-  "Todos",
-  "Merienda",
-  "Bodegon",
-  "Restaurante",
-  "Bar",
-  "Comida Rapida",
-];
 
   const normalize = (s: string) =>  //otra implementacion del filter
     s
@@ -128,8 +122,8 @@ export default function Map() {
       longitudeDelta: 0.01,
     },
     500 // duración animación en ms
-  );
-};
+    );
+  };
 
   // Si aún no tengo region, podés mostrar un placeholder simple
   if (!region) return <View style={{ flex: 1, backgroundColor: "#0b1523" }} />;
@@ -241,52 +235,11 @@ export default function Map() {
           )}
         </View>
 
-        <View style={styles.filterAnchor}>
-          <Pressable
-            onPress={() => setCategoryOpen((v) => !v)}
-            style={styles.filterButton}>
-            <Ionicons name="funnel" size={18} color="#0D3973" />
-            <Text style={styles.filterButtonText}>
-              {selectedCat === "Todos" ? "Categoría" : selectedCat}
-            </Text>
-          </Pressable>
-
-          {/* Backdrop para cerrar el dropdown tocando fuera */}
-          {categoryOpen && (
-            <Pressable
-              onPress={() => setCategoryOpen(false)}
-              style={StyleSheet.absoluteFillObject}
-            />
-          )}
-
-          {/* Menú desplegable */}
-          {categoryOpen && (
-            <View style={styles.dropdownCard}>
-              {CATEGORIES.map((cat) => (
-                <Pressable
-                  key={cat}
-                  onPress={() => {
-                    setSelectedCat(cat);
-                    setCategoryOpen(false);
-                  }}
-                  style={({ pressed }) => [
-                    styles.dropdownItem,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownText,
-                      cat === selectedCat && styles.dropdownTextActive,
-                    ]}
-                  >
-                    {cat}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
-        </View>
+        <DropDownMenu
+          selectedCat={selectedCat}
+          setSelectedCat={setSelectedCat}
+        >
+        </DropDownMenu>
 
         {/* Modal menú (lo tuyo) */}
         <Modal
@@ -443,73 +396,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 3,
   },
-    // --- FILTRO DE CATEGORÍA ---
-  filterAnchor: {
-    position: "absolute",
-    left: 20,     // misma distancia que el botón de centrado (right: 20)
-    bottom: 30,   // misma altura que el botón de centrado (bottom: 30)
-    zIndex: 20,
-  },
 
-
-  filterButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 35,          // circular
-    backgroundColor: "#1EA4D9", // mismo celeste que tu botón de ubicación
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-
-  filterButtonText: {
-    display: "none", // ya no mostramos texto dentro del círculo
-  },
-
-  dropdownCard: {
-    position: "absolute",
-    bottom: 60,           // aparece justo arriba del botón (ajustá según te guste)
-    left: 0,              // alineado a la izquierda del botón
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#188FD9",
-    paddingVertical: 6,
-    width: 180,
-    flexDirection: "column",      // asegura disposición vertical
-    alignItems: "flex-start",     // alinea el contenido a la izquierda
-    justifyContent: "flex-start", // alinea los elementos hacia arriba
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-    zIndex: 30,
-  },
-
-
-  dropdownItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    width: "100%",               // que ocupen todo el ancho del menú
-    alignItems: "flex-start",    // texto alineado a la izquierda
-  },
-
-  dropdownText: {
-    color: "#0D3973",
-    fontSize: 16,
-    textAlign: "left",           // texto alineado a la izquierda
-  },
-
-
-  dropdownTextActive: {
-    fontWeight: "700",
-    color: "#116EBF",
-  },
-
-
-  
 });

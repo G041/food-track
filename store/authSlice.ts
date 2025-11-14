@@ -48,8 +48,7 @@ export const loginThunk = createAsyncThunk<
     { identifier: string; password: string },
     // thunkAPI reject type
     { rejectValue: string }
-  >(
-    'auth/login',
+  >('auth/login',
     async (credentials, { rejectWithValue }) => {
       try {
         const res = await fetch(`${API_URL}/login`, {
@@ -100,8 +99,7 @@ export const signupThunk = createAsyncThunk<
     { emailAddress: string; username: string; password: string },
     // thunkAPI reject type
     { rejectValue: string }
-  >(
-    'auth/login',
+  >('auth/signup',
     async (credentials, { rejectWithValue }) => {
       try {
         const res = await fetch(`${API_URL}/signup`, {
@@ -114,7 +112,7 @@ export const signupThunk = createAsyncThunk<
 
         if (!res.ok) {
           // normalize backend error to a string
-          return rejectWithValue(data?.error ?? 'Login failed');
+          return rejectWithValue(data?.error ?? 'Signup failed');
         }
 
         // pick username and user_id from possible shapes safely
