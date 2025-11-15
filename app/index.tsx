@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { FlatList, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { Image, Keyboard, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from "react-native";
 
 import { Marker } from "react-native-maps";
 
 import { type Category } from "@/constants/categories";
 
-import DropDownMenu from "@/components/DropDownMenu";
+import Filter from "@/components/Filter";
 import MapViewer from "@/components/MapViewer";
+import SearchBar from "@/components/SearchBar";
 import WebViewOverlay from "@/components/WebViewOverlay";
+import { Restaurant } from "@/constants/restaurant";
 import { useFetchRestaurants } from "@/hooks/useFetchRestaurants";
 import { useUserRegion } from "@/hooks/useUserRegion";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,10 +19,9 @@ export default function Map() {
 
   const [selectedCat, setSelectedCat] = useState<Category>("Todos"); // Category igual a: "Todos" | "Merienda" | "Bodegon" | ...
 
-  // --- estado existente tuyo (filtro, modal, restaurantes, etc.) ---
-  const [filtro, setFiltro] = useState("");
   const [menu_link, setMenu_link] = useState<string | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<number | null>(null);
+  const [currentFiltered, setCurrentFiltered] = useState<Restaurant[]>([]);
 
   const insets = useSafeAreaInsets();
   
@@ -46,23 +47,23 @@ export default function Map() {
     return normalize(desc) === normalize(selectedCat);
   };
 
-  // 3) filtrados (tu lógica)
-  const filtrados = restaurants
-    .filter((r) =>
+  const restaurantFilter = (restaurantList: Restaurant[], searchedRestaurant: String) => {
+    return restaurantList.filter((r) =>
       r.restaurant_name
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .includes(
-          filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          searchedRestaurant.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         )
     )
     .filter((r) => isCategoryMatch(r.description));
+  }
 
   const restaurantMarkerGenerator = () => {
     return (
       <>
-        {filtrados
+        {currentFiltered
             .filter(r => r.latitude != null && r.longitude != null)
             .map(r => (
                 <Marker
@@ -90,6 +91,28 @@ export default function Map() {
     )
   }
 
+  const extractRestaurantKeyFromItem = (item: Restaurant) => {
+    return (String(item.id_restaurant))
+  }
+
+  const restaurantItemRenderiser = (item: Restaurant) => {
+    return (
+      <Pressable
+        style={styles.itemStyles}
+        onPress={() => setMenu_link(item.menu_link)}
+      >
+          <Image
+              source={require("../assets/images/restaurant_placeholder.png")}
+              style={styles.imageStyles}
+          />
+          <View>
+          <Text style={styles.textTitle}>{item.restaurant_name}</Text>
+          <Text>{item.description}</Text>
+          </View>
+      </Pressable>
+    )
+  }
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ flex: 1 }}>
@@ -110,49 +133,18 @@ export default function Map() {
           </View>
         )}
 
-        {/* OVERLAY: búsqueda + lista (lo tuyo) */}
-        <View style={[styles.overlay, { top: topOffset }]}>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.inputStyle}
-              placeholderTextColor="#ffffff83"
-              placeholder="Buscar restaurante..."
-              value={filtro}
-              onChangeText={setFiltro}
-            />
-            {filtro.length > 0 && (
-              <Pressable style={styles.clearButton} onPress={() => setFiltro("")}>
-                <Text style={styles.clearButtonText}>✕</Text>
-              </Pressable>
-            )}
-          </View>
-
-          {filtro.length > 0 && (
-            <FlatList
-              style={styles.listStyles}
-              data={filtrados}
-              keyExtractor={(it) => String(it.id_restaurant)}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={styles.itemStyles}
-                  onPress={() => setMenu_link(item.menu_link)}
-                >
-                  <Image
-                    source={require("../assets/images/restaurant_placeholder.png")}
-                    style={styles.imageStyles}
-                  />
-                  <View>
-                    <Text style={styles.textTitle}>{item.restaurant_name}</Text>
-                    <Text>{item.description}</Text>
-                  </View>
-                </Pressable>
-              )}
-            />
-          )}
-        </View>
+        {/* Search bar */}
+        <SearchBar
+          itemList={restaurants}
+          itemFilter={restaurantFilter}
+          topOffset={topOffset}
+          extractKeyFromItem={extractRestaurantKeyFromItem}
+          itemRenderiser={restaurantItemRenderiser}
+          onFilteredItemsChange={setCurrentFiltered}
+        />
         
         {/* Boton de filtros */}
-        <DropDownMenu
+        <Filter
           selectedCat={selectedCat}
           setSelectedCat={setSelectedCat}
         />
@@ -198,27 +190,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  clearButton: {
-    position: "absolute",
-    right: 12,
-    top: "50%",
-    transform: [{ translateY: -16 }],
-    padding: 5,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  clearButtonText: {
-    fontSize: 18,
-    color: "#1EA4D9", // acento celeste
-    fontWeight: "bold",
-  },
-
-  listStyles: {
-    width: "100%",
-    marginTop: 8,
-  },
-
   itemStyles: {
     flexDirection: "row",
     alignItems: "center",
@@ -232,7 +203,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
-  },
+},
 
   imageStyles: {
     width: 70,

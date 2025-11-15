@@ -9,7 +9,7 @@ type Props = {
   selectedCat: Category,
 };
 
-export default function DropDownMenu({ setSelectedCat, selectedCat } : Props) {
+export default function Filter({ setSelectedCat, selectedCat } : Props) {
     
     const [categoryOpen, setCategoryOpen] = useState(false);     // si el menú está abierto
 
