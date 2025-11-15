@@ -1,56 +1,37 @@
-import { Ionicons } from "@expo/vector-icons"; //para el boton que centra la ubicacion
-import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { FlatList, Image, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
-import { WebView } from "react-native-webview";
+import { useState } from "react";
+import { Image, Keyboard, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from "react-native";
 
-import * as Location from "expo-location";
-import type { Region } from "react-native-maps";
-import MapView, { Circle, Marker } from "react-native-maps";
+import { Marker } from "react-native-maps";
 
+import { type Category } from "@/constants/categories";
+
+import Filter from "@/components/Filter";
+import MapViewer from "@/components/MapViewer";
+import SearchBar from "@/components/SearchBar";
+import WebViewOverlay from "@/components/WebViewOverlay";
+import { Restaurant } from "@/constants/restaurant";
+import { useFetchRestaurants } from "@/hooks/useFetchRestaurants";
+import { useUserRegion } from "@/hooks/useUserRegion";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { API_URL } from "../utils/config";
-
-type Restaurant = {
-  id_restaurant: number;
-  restaurant_name: string;
-  description?: "Merienda" | "Bodegon" | "Restaurante" | "Bar" | "Comida Rapida" | string;
-  menu_link: string;
-  latitude: number;   // por si vienen nulos en la primera migración
-  longitude: number;
-  
-};
-
-// Región con accuracy opcional (para el círculo)
-type RegionWithAccuracy = Region & { accuracy?: number | null }; 
 
 export default function Map() {
-  // --- estado existente tuyo (filtro, modal, restaurantes, etc.) ---
-  const [filtro, setFiltro] = useState("");
+
+  const [selectedCat, setSelectedCat] = useState<Category>("Todos"); // Category igual a: "Todos" | "Merienda" | "Bodegon" | ...
+
   const [menu_link, setMenu_link] = useState<string | null>(null);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const mapRef = useRef<MapView>(null);
   const [selectedMarker, setSelectedMarker] = useState<number | null>(null);
-  
-  // --- NUEVO: región del usuario ---
-  const [region, setRegion] = useState<RegionWithAccuracy | null>(null);
+  const [currentFiltered, setCurrentFiltered] = useState<Restaurant[]>([]);
 
   const insets = useSafeAreaInsets();
+  
   // topOffset ensures the overlay sits below the notch/status bar
   const topOffset = insets.top + 10; // tweak +10 or +12 for spacing
 
-  const [categoryOpen, setCategoryOpen] = useState(false);     // si el menú está abierto
-  const [selectedCat, setSelectedCat] = useState< "Todos" | "Merienda" | "Bodegon" | "Restaurante" | "Bar" | "Comida Rapida">("Todos");
-
-  const CATEGORIES: Array<typeof selectedCat> = [
-  "Todos",
-  "Merienda",
-  "Bodegon",
-  "Restaurante",
-  "Bar",
-  "Comida Rapida",
-];
+  // establezco localizacion de usuario
+  const { region } = useUserRegion();
+  // fetch de restaurantes 
+  const { restaurants } = useFetchRestaurants();
 
   const normalize = (s: string) =>  //otra implementacion del filter
     s
@@ -66,130 +47,82 @@ export default function Map() {
     return normalize(desc) === normalize(selectedCat);
   };
 
-  // 1) pedir ubicación y setear initialRegion
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.warn("Permiso de ubicación denegado");
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      setRegion({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-        accuracy: loc.coords.accuracy, // ahora coincide con el tipo
-      });
-    })();   
-  }, []);
-
-  // 2) tu fetch de restaurantes (igual que antes)
-  useFocusEffect(
-    useCallback(() => {
-      async function fetchRestaurants() {
-        try {
-          const res = await fetch(`${API_URL}/restaurants`);
-          const data = await res.json();
-          setRestaurants(data);
-        } catch (err) {
-          console.error("Error fetching restaurants:", err);
-        }
-      }
-      fetchRestaurants();
-    }, [])
-  );
-
-  // 3) filtrados (tu lógica)
-  const filtrados = restaurants
-    .filter((r) =>
+  const restaurantFilter = (restaurantList: Restaurant[], searchedRestaurant: String) => {
+    return restaurantList.filter((r) =>
       r.restaurant_name
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .includes(
-          filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          searchedRestaurant.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         )
     )
     .filter((r) => isCategoryMatch(r.description));
+  }
 
+  const restaurantMarkerGenerator = () => {
+    return (
+      <>
+        {currentFiltered
+            .filter(r => r.latitude != null && r.longitude != null)
+            .map(r => (
+                <Marker
+                    key={r.id_restaurant}
+                    coordinate={{
+                        latitude: r.latitude as number,
+                        longitude: r.longitude as number,
+                    }}
+                    title={r.restaurant_name}
+                    description={r.description}
+                    onPress={() => {
+                        if (selectedMarker === r.id_restaurant) {
+                            // segundo toque → abre el menú
+                            setMenu_link(r.menu_link);
+                            setSelectedMarker(null); // resetea después de abrir
+                        } else {
+                            // primer toque → solo selecciona el marker
+                            setSelectedMarker(r.id_restaurant);
+                        }
+                    }}
+                />)
+            )
+        }
+      </>
+    )
+  }
 
-  const centerOnUser = () => {
-  if (!region || !mapRef.current) return;
+  const extractRestaurantKeyFromItem = (item: Restaurant) => {
+    return (String(item.id_restaurant))
+  }
 
-  mapRef.current.animateToRegion(
-    {
-      latitude: region.latitude,
-      longitude: region.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    },
-    500 // duración animación en ms
-  );
-};
-
-  // Si aún no tengo region, podés mostrar un placeholder simple
-  if (!region) return <View style={{ flex: 1, backgroundColor: "#0b1523" }} />;
+  const restaurantItemRenderiser = (item: Restaurant) => {
+    return (
+      <Pressable
+        style={styles.itemStyles}
+        onPress={() => setMenu_link(item.menu_link)}
+      >
+          <Image
+              source={require("../assets/images/restaurant_placeholder.png")}
+              style={styles.imageStyles}
+          />
+          <View>
+          <Text style={styles.textTitle}>{item.restaurant_name}</Text>
+          <Text>{item.description}</Text>
+          </View>
+      </Pressable>
+    )
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ flex: 1 }}>
         {/* MAPA */}
         {Platform.OS === "ios" ? (
-          <MapView
-            style={styles.map}
-            initialRegion={region}
-            ref = {mapRef}
-            showsUserLocation
-            showsPointsOfInterest={false}
-            mapType="mutedStandard"
-            compassOffset={{ x: -10, y: insets.top + 20 }}
-          >
-            <Pressable onPress={centerOnUser} style={styles.locationButton}>
-              <Ionicons name="locate" size={28} color="black" />
-            </Pressable>
-            {/* Círculo de precisión opcional */}
-            {region.accuracy !== undefined && (
-              <Circle
-                center={{ latitude: region.latitude, longitude: region.longitude }}
-                radius={Math.max(region.accuracy ?? 25, 25)} // maneja null/undefined
-                fillColor="rgba(0,122,255,0.15)"
-                strokeColor="rgba(0,122,255,0.6)"
-                strokeWidth={2}
-              />
-            )}
-            
-            {/* Markers de restaurantes */}
-            {filtrados
-              .filter(r => r.latitude != null && r.longitude != null)
-              .map(r => (
-                <Marker
-                  key={r.id_restaurant}
-                  coordinate={{
-                    latitude: r.latitude as number,
-                    longitude: r.longitude as number,
-                  }}
-                  title={r.restaurant_name}
-                  description={r.description}
-                  onPress={() => {
-                    if (selectedMarker === r.id_restaurant) {
-                      // segundo toque → abre el menú
-                      setMenu_link(r.menu_link);
-                      setSelectedMarker(null); // resetea después de abrir
-                    } else {
-                      // primer toque → solo selecciona el marker
-                      setSelectedMarker(r.id_restaurant);
-                    }
-                  }}
-                />
-              ))}
-
-
-
-          </MapView>
+          <MapViewer
+            region={region}
+            compassPosition={{ x: -10, y: insets.top + 20 }}
+            renderMarkers={restaurantMarkerGenerator}
+          />
         ) : (
           <View style={{ 
             flex: 1, 
@@ -200,155 +133,33 @@ export default function Map() {
           </View>
         )}
 
-        {/* OVERLAY: búsqueda + lista (lo tuyo) */}
-        <View style={[styles.overlay, { top: topOffset }]}>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.inputStyle}
-              placeholderTextColor="grey"
-              placeholder="Buscar restaurante..."
-              value={filtro}
-              onChangeText={setFiltro}
-            />
-            {filtro.length > 0 && (
-              <Pressable style={styles.clearButton} onPress={() => setFiltro("")}>
-                <Text style={styles.clearButtonText}>✕</Text>
-              </Pressable>
-            )}
-          </View>
+        {/* Search bar */}
+        <SearchBar
+          itemList={restaurants}
+          itemFilter={restaurantFilter}
+          topOffset={topOffset}
+          extractKeyFromItem={extractRestaurantKeyFromItem}
+          itemRenderiser={restaurantItemRenderiser}
+          onFilteredItemsChange={setCurrentFiltered}
+        />
+        
+        {/* Boton de filtros */}
+        <Filter
+          selectedCat={selectedCat}
+          setSelectedCat={setSelectedCat}
+        />
 
-          {filtro.length > 0 && (
-            <FlatList
-              style={styles.listStyles}
-              data={filtrados}
-              keyExtractor={(it) => String(it.id_restaurant)}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={styles.itemStyles}
-                  onPress={() => setMenu_link(item.menu_link)}
-                >
-                  <Image
-                    source={require("../assets/images/restaurant_placeholder.png")}
-                    style={styles.imageStyles}
-                  />
-                  <View>
-                    <Text style={styles.textTitle}>{item.restaurant_name}</Text>
-                    <Text>{item.description}</Text>
-                  </View>
-                </Pressable>
-              )}
-            />
-          )}
-        </View>
-
-        <View style={styles.filterAnchor}>
-          <Pressable
-            onPress={() => setCategoryOpen((v) => !v)}
-            style={styles.filterButton}>
-            <Ionicons name="funnel" size={18} color="#0D3973" />
-            <Text style={styles.filterButtonText}>
-              {selectedCat === "Todos" ? "Categoría" : selectedCat}
-            </Text>
-          </Pressable>
-
-          {/* Backdrop para cerrar el dropdown tocando fuera */}
-          {categoryOpen && (
-            <Pressable
-              onPress={() => setCategoryOpen(false)}
-              style={StyleSheet.absoluteFillObject}
-            />
-          )}
-
-          {/* Menú desplegable */}
-          {categoryOpen && (
-            <View style={styles.dropdownCard}>
-              {CATEGORIES.map((cat) => (
-                <Pressable
-                  key={cat}
-                  onPress={() => {
-                    setSelectedCat(cat);
-                    setCategoryOpen(false);
-                  }}
-                  style={({ pressed }) => [
-                    styles.dropdownItem,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownText,
-                      cat === selectedCat && styles.dropdownTextActive,
-                    ]}
-                  >
-                    {cat}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Modal menú (lo tuyo) */}
-        <Modal
-          visible={menu_link !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setMenu_link(null)} // Android back button
-        >
-          <View style={{ flex: 1 }}>
-            {/* BACKDROP that closes on tap */}
-            <Pressable
-              onPress={() => setMenu_link(null)}
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                backgroundColor: "rgba(0,0,0,0.6)",
-              }}
-            />
-
-            {/* LAYER ABOVE THE BACKDROP */}
-            <View
-              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-              pointerEvents="box-none" // don't block backdrop where there's no card
-            >
-              {/* CARD — do NOT use Pressable here */}
-              <View
-                style={{
-                  width: "95%",
-                  height: "85%",
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  backgroundColor: "white",
-                }}
-              >
-                {Platform.OS === "web" ? (
-                  menu_link && (
-                    <iframe
-                      src={menu_link}
-                      style={{ width: "100%", height: "100%", border: "none" }}
-                    />
-                  )
-                ) : (
-                  menu_link && (
-                    <WebView
-                      source={{ uri: menu_link }}
-                      style={{ flex: 1 }}
-                    />
-                  )
-                )}
-              </View>
-            </View>
-          </View>
-        </Modal>
-
+        {/* Display de menu */}
+        <WebViewOverlay
+          url={menu_link}
+          setURL={setMenu_link}
+        />
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  map: {
-    flex: 1,
-  },
 
   overlay: {
     position: "absolute",
@@ -368,49 +179,15 @@ const styles = StyleSheet.create({
   inputStyle: {
     height: 48,
     width: "100%",
-    backgroundColor: "#0D3973", // azul profundo
+    backgroundColor: "#2daefe12", // azul profundo
     borderRadius: 12,
     paddingLeft: 12,
     paddingRight: 44,
     fontSize: 18,
     marginBottom: 8,
-    borderWidth: 1.5,
-    borderColor: "#188FD9",
+    borderWidth: 0,
+    borderColor: "#0d2a51ff",
     color: "#FFFFFF",
-  },
-
-  locationButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: "#1EA4D9", // celeste brillante
-    padding: 14,
-    borderRadius: 40,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
-  },
-
-  clearButton: {
-    position: "absolute",
-    right: 12,
-    top: "50%",
-    transform: [{ translateY: -16 }],
-    padding: 5,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  clearButtonText: {
-    fontSize: 18,
-    color: "#1EA4D9", // acento celeste
-    fontWeight: "bold",
-  },
-
-  listStyles: {
-    width: "100%",
-    marginTop: 8,
   },
 
   itemStyles: {
@@ -426,7 +203,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
-  },
+},
 
   imageStyles: {
     width: 70,
@@ -443,73 +220,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 3,
   },
-    // --- FILTRO DE CATEGORÍA ---
-  filterAnchor: {
-    position: "absolute",
-    left: 20,     // misma distancia que el botón de centrado (right: 20)
-    bottom: 30,   // misma altura que el botón de centrado (bottom: 30)
-    zIndex: 20,
-  },
 
-
-  filterButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 35,          // circular
-    backgroundColor: "#1EA4D9", // mismo celeste que tu botón de ubicación
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-
-  filterButtonText: {
-    display: "none", // ya no mostramos texto dentro del círculo
-  },
-
-  dropdownCard: {
-    position: "absolute",
-    bottom: 60,           // aparece justo arriba del botón (ajustá según te guste)
-    left: 0,              // alineado a la izquierda del botón
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#188FD9",
-    paddingVertical: 6,
-    width: 180,
-    flexDirection: "column",      // asegura disposición vertical
-    alignItems: "flex-start",     // alinea el contenido a la izquierda
-    justifyContent: "flex-start", // alinea los elementos hacia arriba
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-    zIndex: 30,
-  },
-
-
-  dropdownItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    width: "100%",               // que ocupen todo el ancho del menú
-    alignItems: "flex-start",    // texto alineado a la izquierda
-  },
-
-  dropdownText: {
-    color: "#0D3973",
-    fontSize: 16,
-    textAlign: "left",           // texto alineado a la izquierda
-  },
-
-
-  dropdownTextActive: {
-    fontWeight: "700",
-    color: "#116EBF",
-  },
-
-
-  
 });
