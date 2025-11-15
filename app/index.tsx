@@ -170,26 +170,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  searchContainer: {
-    width: "100%",
-    position: "relative",
-    justifyContent: "center",
-  },
-
-  inputStyle: {
-    height: 48,
-    width: "100%",
-    backgroundColor: "#2daefe12", // azul profundo
-    borderRadius: 12,
-    paddingLeft: 12,
-    paddingRight: 44,
-    fontSize: 18,
-    marginBottom: 8,
-    borderWidth: 0,
-    borderColor: "#0d2a51ff",
-    color: "#FFFFFF",
-  },
-
   itemStyles: {
     flexDirection: "row",
     alignItems: "center",
