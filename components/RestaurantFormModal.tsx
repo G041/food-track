@@ -1,13 +1,13 @@
 import { AppDispatch } from "@/store";
 import { addRestaurantThunk } from "@/store/restaurantsSlice";
+import { CATEGORIES } from "@/types/categories";
 import { Picker } from "@react-native-picker/picker";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { useDispatch } from "react-redux";
-
-import { CATEGORIES } from "@/types/categories";
 import { Marker, Region } from "react-native-maps";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
 import MapViewer from "./MapViewer";
 
 type Props = {
@@ -27,6 +27,8 @@ const defaultPosition: Region = {
 export default function RestaurantFormModal({ visible, initialMenuLink, coords, setScanned }: Props) {
     
     const dispatch = useDispatch<AppDispatch>();
+
+    const insets = useSafeAreaInsets();
 
     const [restaurant_name, setRestaurant_name] = useState("");
     const [description, setDescription] = useState("");
@@ -182,14 +184,20 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
             visible={showMap}
             animationType="slide"
             transparent={false}
-            onRequestClose={() => setShowMap(false)}
         >
             <View style={{ flex: 1 }}>                
                 <MapViewer 
                   region={userRegion}
                   onMapLongPress={setPickedCoords}
                   renderMarkers={renderPickedMarker}
+                  compassPosition={{ x: -10, y: insets.top }}
                 />
+
+                <View style={[styles.mapOverlay, {top: insets.top}]} pointerEvents="none">
+                  <Text style={styles.overlayText}>
+                    Mantén presionado para seleccionar una ubicación
+                  </Text>
+                </View>
 
                 <Pressable
                     style={styles.mapButton}
@@ -336,6 +344,23 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 36,
     alignSelf: "center",
+  },
+
+  mapOverlay: {
+    left: 15,
+    right: 15,
+    position: "absolute",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+  },
+
+  overlayText: {
+    color: "#fff",
+    fontSize: 15,
+    textAlign: "center",
+    fontWeight: "500",
   },
 
   buttonText: {

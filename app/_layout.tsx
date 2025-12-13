@@ -3,6 +3,7 @@ import { loadTokenFromStorage } from "@/store/authSlice"; // thunk
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useEffect } from "react";
+import { ActivityIndicator } from "react-native";
 import { Provider, useDispatch, useSelector } from "react-redux";
 
 
@@ -16,60 +17,59 @@ function AppTabs() {
     dispatch(loadTokenFromStorage());
   }, [dispatch]);
 
-  // while loading, you can return null or a spinner; we'll render Tabs anyway
-  // but you could also show a splash/loading screen
-  if (isLoading) return null;
-
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: "#1C0526", // fondo oscuro profundo
-          borderTopColor: "#0D3973", // borde superior azul oscuro
-          shadowColor: "#116EBF",
-          shadowOpacity: 0.4,
-          shadowRadius: 10,
-          elevation: 5,
-          paddingTop: 5,
-        },
-        tabBarActiveTintColor: "#62c6eeff", // activo: azul brillante
-        tabBarInactiveTintColor: "#188FD9", // inactivo: celeste medio
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
-          letterSpacing: 0.3,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Mapa",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome5 name="map-marked-alt" size={size} color={color} />
-          ),
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: "#1C0526", // fondo oscuro profundo
+            borderTopColor: "#0D3973", // borde superior azul oscuro
+            shadowColor: "#116EBF",
+            shadowOpacity: 0.4,
+            shadowRadius: 10,
+            elevation: 5,
+            paddingTop: 5,
+          },
+          tabBarActiveTintColor: "#62c6eeff", // activo: azul brillante
+          tabBarInactiveTintColor: "#188FD9", // inactivo: celeste medio
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "600",
+            letterSpacing: 0.3,
+          },
         }}
-      />
-      <Tabs.Screen
-        name="camera"
-        options={{
-          title: "Escaneá un QR",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome5 name="qrcode" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: "Perfil",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="home" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Mapa",
+            tabBarIcon: ({ color, size }) => (
+              <FontAwesome5 name="map-marked-alt" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="camera"
+          options={{
+            title: "Escaneá un QR",
+            tabBarIcon: ({ color, size }) => (
+              <FontAwesome5 name="qrcode" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="home"
+          options={{
+            title: "Perfil",
+            tabBarIcon: ({ color, size }) => (
+              <FontAwesome name="home" size={size} color={color} />
+            ),
+          }}
+        />
+      </Tabs>
+      {isLoading && <ActivityIndicator/>}
+    </>
   );
 }
 

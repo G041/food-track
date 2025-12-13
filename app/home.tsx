@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 
 import { AppDispatch, RootState } from "@/store";
 import { loginThunk, logoutThunk, signupThunk } from "@/store/authSlice";
@@ -26,8 +26,13 @@ function CreateModal() {
   const [logInIdentifier, setLogInIdentifier] = useState("");
   const [logInPassword, setLogInPassword] = useState("");
 
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [signupError, setSignupError] = useState<string | null>(null);
+
   const handleLogInRequest = async () => {
     try {
+      setLoginError(null); // limpio error previo
+
       // dispatch thunk and unwrap result (will throw if rejected)
       const action = await dispatch(
         loginThunk({ identifier: logInIdentifier, password: logInPassword })
@@ -37,17 +42,17 @@ function CreateModal() {
       // thunk persisted token/username/user_id via authSlice implementation
       clearInputs();
       setLogInModalVisible(false);
-      //Alert.alert("Log in successful", `Welcome ${payload.username ?? ""}`);
     } catch (err: any) {
       // unwrapResult throws the rejectWithValue payload if rejected
-      const message = err?.message ?? err ?? "Login failed";
-      console.error("Login error:", err);
-      Alert.alert("Login failed", String(message));
+      const message = err;
+      setLoginError(message); 
     }
   };
 
   const handleSignUpRequest = async () => {
     try {
+      setSignupError(null); // limpio error previo
+
       const signUpCredentials = {
         emailAddress: email,
         username: username,
@@ -62,13 +67,10 @@ function CreateModal() {
       const payload = unwrapResult(action); // { token, username, user_id }
       // thunk persisted token/username/user_id via authSlice implementation
       clearInputs();
-      setLogInModalVisible(false);
-      //Alert.alert("Log in successful", `Welcome ${payload.username ?? ""}`);
+      setSignUpModalVisible(false);
     } catch (err: any) {
-      // unwrapResult throws the rejectWithValue payload if rejected
-      const message = err?.message ?? err ?? "Login failed";
-      console.error("Signup error:", err);
-      Alert.alert("Signup failed", String(message));
+      const message = err;
+      setSignupError(message); 
     }
   };
 
@@ -87,111 +89,127 @@ function CreateModal() {
     setPassword("");
   }
 
-  return isLoggedIn ? (
+  return (
     <View style={styles.containerStyles}>
-      <Text style={styles.textStyle}>Hola { reduxUsername }!</Text>
+      {isLoggedIn ? (
+        <View style={styles.containerStyles}>
+          <Text style={styles.textStyle}>Hola { reduxUsername }!</Text>
 
-      <Pressable style={styles.cancelButtonStyles} onPress={handleLogout}>
-        <Text style={styles.buttonTextStyle}>Log out</Text>
-      </Pressable>
-    </View>
-   ) : (
-    <View style={styles.containerStyles}>
-      <Text style={styles.textStyle} >Por favor ingresá a tu cuenta</Text>
+          <Pressable style={styles.cancelButtonStyles} onPress={handleLogout}>
+            <Text style={styles.buttonTextStyle}>Log out</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.containerStyles}>
+          <Text style={styles.textStyle} >Por favor ingresá a tu cuenta</Text>
 
-      <Pressable style={styles.buttonStyles} onPress={() => setLogInModalVisible(true)}>
-        <Text style={styles.buttonTextStyle}>Log in</Text>
-      </Pressable>
-      <Pressable style={styles.buttonStyles} onPress={() => setSignUpModalVisible(true)}>
-        <Text style={styles.buttonTextStyle}>Sign up</Text>
-      </Pressable>
+          <Pressable style={styles.buttonStyles} onPress={() => setLogInModalVisible(true)}>
+            <Text style={styles.buttonTextStyle}>Log in</Text>
+          </Pressable>
+          <Pressable style={styles.buttonStyles} onPress={() => setSignUpModalVisible(true)}>
+            <Text style={styles.buttonTextStyle}>Sign up</Text>
+          </Pressable>
 
-      <Modal visible={logInModalVisible} animationType="slide">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <View style={styles.containerStyles}>
-                <TextInput
-                  placeholder="Ingresá tu email o nombre de usuario..."
-                  value={logInIdentifier}
-                  onChangeText={setLogInIdentifier}
-                  autoCorrect={false}         
-                  spellCheck={false} 
-                  style={styles.inputStyle}
-                  placeholderTextColor="white"
-                />
-                <TextInput
-                  placeholder="Ingresá tu contraseña..."
-                  value={logInPassword}
-                  onChangeText={setLogInPassword}
-                  autoCorrect={false}         
-                  spellCheck={false} 
-                  secureTextEntry={true}
-                  style={styles.inputStyle}
-                  placeholderTextColor="white"
-                />
+          <Modal visible={logInModalVisible} animationType="slide">
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={{ flex: 1 }}
+            >
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <View style={styles.containerStyles}>
+                    {loginError && (
+                      <Text style={styles.errorText}>
+                        {loginError}
+                      </Text>
+                    )}
 
-                <Pressable style={styles.buttonStyles} onPress={handleLogInRequest}>
-                  <Text style={styles.buttonTextStyle}>Log In</Text>
-                </Pressable>
+                    <TextInput
+                      placeholder="Ingresá tu email o nombre de usuario..."
+                      value={logInIdentifier}
+                      onChangeText={setLogInIdentifier}
+                      autoCorrect={false}         
+                      spellCheck={false} 
+                      style={styles.inputStyle}
+                      placeholderTextColor="white"
+                    />
+                    <TextInput
+                      placeholder="Ingresá tu contraseña..."
+                      value={logInPassword}
+                      onChangeText={setLogInPassword}
+                      autoCorrect={false}         
+                      spellCheck={false} 
+                      secureTextEntry={true}
+                      style={styles.inputStyle}
+                      placeholderTextColor="white"
+                    />
 
-                <Pressable style={styles.cancelButtonStyles} onPress={() => {setLogInModalVisible(false); clearInputs()}}>
-                  <Text style={styles.buttonTextStyle}>Cancelar</Text>
-                </Pressable>
-            </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
-      </Modal>
+                    <Pressable style={styles.buttonStyles} onPress={handleLogInRequest}>
+                      <Text style={styles.buttonTextStyle}>Log In</Text>
+                    </Pressable>
 
-      <Modal visible={signUpModalVisible} animationType="slide">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <View style={styles.containerStyles}>
-                <TextInput
-                  placeholder="Ingresa tu email..."
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCorrect={false}         
-                  spellCheck={false} 
-                  style={styles.inputStyle}
-                  placeholderTextColor="white"
-                />
-                <TextInput
-                  placeholder="Ingresá tu nombre de usuario..."
-                  value={username}
-                  onChangeText={setUserName}
-                  autoCorrect={false}         
-                  spellCheck={false} 
-                  style={styles.inputStyle}
-                  placeholderTextColor="white"
-                />
-                <TextInput
-                  placeholder="Ingresá tu contraseña..."
-                  value={password}
-                  onChangeText={setPassword}
-                  autoCorrect={false}         
-                  spellCheck={false}
-                  secureTextEntry={true}
-                  style={styles.inputStyle}
-                  placeholderTextColor="white"
-                />
+                    <Pressable style={styles.cancelButtonStyles} onPress={() => {setLogInModalVisible(false); clearInputs()}}>
+                      <Text style={styles.buttonTextStyle}>Cancelar</Text>
+                    </Pressable>
+                </View>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+          </Modal>
 
-                <Pressable style={styles.buttonStyles} onPress={handleSignUpRequest}>
-                  <Text style={styles.buttonTextStyle}>Sign up</Text>
-                </Pressable>
+          <Modal visible={signUpModalVisible} animationType="slide">
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={{ flex: 1 }}
+            >
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <View style={styles.containerStyles}>
+                    {signupError && (
+                      <Text style={styles.errorText}>
+                        {signupError}
+                      </Text>
+                    )}
 
-                <Pressable style={styles.cancelButtonStyles} onPress={() => {setSignUpModalVisible(false); clearInputs()}}>
-                  <Text style={styles.buttonTextStyle}>Cancelar</Text>
-                </Pressable>
-            </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
-      </Modal>
+                    <TextInput
+                      placeholder="Ingresa tu email..."
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCorrect={false}         
+                      spellCheck={false} 
+                      style={styles.inputStyle}
+                      placeholderTextColor="white"
+                    />
+                    <TextInput
+                      placeholder="Ingresá tu nombre de usuario..."
+                      value={username}
+                      onChangeText={setUserName}
+                      autoCorrect={false}         
+                      spellCheck={false} 
+                      style={styles.inputStyle}
+                      placeholderTextColor="white"
+                    />
+                    <TextInput
+                      placeholder="Ingresá tu contraseña..."
+                      value={password}
+                      onChangeText={setPassword}
+                      autoCorrect={false}         
+                      spellCheck={false}
+                      secureTextEntry={true}
+                      style={styles.inputStyle}
+                      placeholderTextColor="white"
+                    />
+
+                    <Pressable style={styles.buttonStyles} onPress={handleSignUpRequest}>
+                      <Text style={styles.buttonTextStyle}>Sign up</Text>
+                    </Pressable>
+
+                    <Pressable style={styles.cancelButtonStyles} onPress={() => {setSignUpModalVisible(false); clearInputs()}}>
+                      <Text style={styles.buttonTextStyle}>Cancelar</Text>
+                    </Pressable>
+                </View>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+          </Modal>
+        </View>
+      )}
     </View>
   );
 }
@@ -270,4 +288,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
   },
+
+  errorText: {
+    color: "#ffb4b4",
+    backgroundColor: "rgba(255,0,0,0.15)",
+    borderColor: "#ff6b6b",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 6,
+    width: "85%",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+
 });

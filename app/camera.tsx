@@ -34,9 +34,19 @@ export default function Camera() {
 
   return !isLoggedIn ? (
     <View style={styles.container}>
-      <Text style={{ color: "white", fontSize: 15}}>No has iniciado sesión</Text>
+      <Text style={{ color: "white", fontSize: 14 }}>No has iniciado sesión</Text>
         <Pressable onPress={() => router.push("/home")} style={ styles.primaryButton } >
-          <Text style={{ color: "white" }}>Ir a pantalla de Login</Text>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 15,
+              textAlign: "center",
+              flexShrink: 1,
+              width: "100%",       
+            }}
+          >
+            Ir a pantalla de Login
+          </Text>
       </Pressable>
     </View>
   ) : (
@@ -152,7 +162,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: "#1EA4D9",
     width: "80%",
-    height: 50,
+    minHeight: 50,
     marginTop: 10,
     justifyContent: "center",
     alignItems: "center",
@@ -166,7 +176,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: "#116EBF",
     width: "80%",
-    height: 45,
+    minHeight: 45,
     marginTop: 12,
     justifyContent: "center",
     alignItems: "center",
