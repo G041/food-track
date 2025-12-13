@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { CATEGORIES, type Category } from "@/constants/categories";
+import { CATEGORIES, type Category } from "@/types/categories";
 
 type Props = {
   setSelectedCat: React.Dispatch<React.SetStateAction<Category>>,

@@ -3,13 +3,13 @@ import { Image, Keyboard, Platform, Pressable, StyleSheet, Text, TouchableWithou
 
 import { Marker } from "react-native-maps";
 
-import { type Category } from "@/constants/categories";
+import { type Category } from "@/types/categories";
+import { Restaurant } from "@/types/restaurant";
 
 import Filter from "@/components/Filter";
 import MapViewer from "@/components/MapViewer";
 import SearchBar from "@/components/SearchBar";
 import WebViewOverlay from "@/components/WebViewOverlay";
-import { Restaurant } from "@/constants/restaurant";
 import { useFetchRestaurants } from "@/hooks/useFetchRestaurants";
 import { useUserRegion } from "@/hooks/useUserRegion";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

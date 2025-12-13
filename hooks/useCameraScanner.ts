@@ -18,7 +18,7 @@ export function useCameraScanner(scanned: boolean, setScanned: React.Dispatch<Re
     const handleBarcodeScanned = async ({ type, data }: { type: string; data: string }) => {
         if (scanned) return;
         setScanned(true);
-        console.log(`Scanned ${type}: ${data}`);
+        // console.log(`Scanned ${type}: ${data}`);
         setScannedURL(data);
 
         const { status } = await Location.requestForegroundPermissionsAsync();

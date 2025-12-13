@@ -1,4 +1,4 @@
-import { Restaurant } from "@/constants/restaurant";
+import { Restaurant } from "@/types/restaurant";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { API_URL } from "../utils/config";

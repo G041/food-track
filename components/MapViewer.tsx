@@ -1,4 +1,4 @@
-import { RegionWithAccuracy } from "@/hooks/useUserRegion";
+import { RegionWithAccuracy } from "@/types/region";
 import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { useRef } from "react";
@@ -7,11 +7,12 @@ import MapView, { Circle, Point } from "react-native-maps";
 
 type Props = {
     region: RegionWithAccuracy | null,
-    renderMarkers: () => React.JSX.Element,
+    renderMarkers?: () => React.JSX.Element,
     compassPosition?: Point | undefined,
+    onMapLongPress?: (coords: { latitude: number; longitude: number }) => void;
 }
 
-export default function MapViewer({ region, renderMarkers, compassPosition }: Props) {
+export default function MapViewer({ region, renderMarkers, compassPosition, onMapLongPress }: Props) {
 
     const mapRef = useRef<MapView>(null);
 
@@ -41,6 +42,7 @@ export default function MapViewer({ region, renderMarkers, compassPosition }: Pr
             showsPointsOfInterest={false}
             mapType="mutedStandard"
             compassOffset={compassPosition}
+            onLongPress={onMapLongPress? ((e) => onMapLongPress(e.nativeEvent.coordinate)) : undefined}
         >
             <Pressable onPress={centerOnUser} style={styles.locationButton}>
                 <Ionicons name="locate" size={28} color="black" />
@@ -58,7 +60,8 @@ export default function MapViewer({ region, renderMarkers, compassPosition }: Pr
             )}
             
             {/* Markers */}
-            {renderMarkers()}
+            {renderMarkers?.()}
+        
         </MapView>
     )
 }
