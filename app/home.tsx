@@ -68,6 +68,7 @@ function CreateModal() {
       // thunk persisted token/username/user_id via authSlice implementation
       clearInputs();
       setSignUpModalVisible(false);
+      setSignupError("Cuenta creada exitosamente!")
     } catch (err: any) {
       const message = err;
       setSignupError(message); 
@@ -101,6 +102,13 @@ function CreateModal() {
         </View>
       ) : (
         <View style={styles.containerStyles}>
+
+          {signupError && (
+            <Text style={styles.successText}>
+              {signupError}
+            </Text>
+          )}
+
           <Text style={styles.textStyle} >Por favor ingresá a tu cuenta</Text>
 
           <Pressable style={styles.buttonStyles} onPress={() => setLogInModalVisible(true)}>
@@ -293,6 +301,18 @@ const styles = StyleSheet.create({
     color: "#ffb4b4",
     backgroundColor: "rgba(255,0,0,0.15)",
     borderColor: "#ff6b6b",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 6,
+    width: "85%",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+
+  successText: {
+    color: "#b7ffb4ff",
+    backgroundColor: "rgba(0, 121, 6, 0.38)",
+    borderColor: "#6bff6bff",
     borderWidth: 1,
     padding: 10,
     borderRadius: 6,

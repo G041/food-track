@@ -46,6 +46,7 @@ export default function MapViewer({ region, renderMarkers, compassPosition, onMa
                 mapType="standard"
                 showsCompass={false}
                 showsMyLocationButton={false}
+                toolbarEnabled={false}
                 onLongPress={onMapLongPress? ((e) => onMapLongPress(e.nativeEvent.coordinate)) : undefined}
             >
 

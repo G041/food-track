@@ -11,14 +11,14 @@ export function useFetchRestaurants() {
         useCallback(() => {
         async function fetchRestaurants() {
             try {
-            const res = await fetch(`${API_URL}/restaurants`);
-            const data = await res.json();
-            setRestaurants(data);
+                const res = await fetch(`${API_URL}/restaurants`);
+                const data = await res.json();
+                setRestaurants(data);
             } catch (err) {
-            console.error("Error fetching restaurants:", err);
+                console.error("Error fetching restaurants:", err);
             }
         }
-        fetchRestaurants();
+            fetchRestaurants();
         }, [])
     );
 

@@ -39,6 +39,9 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
     const [showMap, setShowMap] = useState(false);
     const [showFormModal, setShowFormModal] = useState(visible);
 
+    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
     //ubicacion default 
     const [userRegion, setUserRegion] = useState<Region>(defaultPosition);
 
@@ -68,16 +71,25 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
       };
 
       try {
+          setStatus("loading");
+          setErrorMessage(null);
+
           const action = await dispatch(addRestaurantThunk(newRestaurant));
           const result = unwrapResult(action); // optional: throws if rejected
 
           console.log("Restaurant added successfully:", result);
+          setStatus("success");
 
-          // reset forms
-          clearRestaurant();
-      } catch (err) {
-          console.error("Failed to add restaurant:", err);
-          clearRestaurant();
+          // Cierro luego de 5s 
+          setTimeout(() => {
+            clearRestaurant();
+            setShowFormModal(false);
+            setStatus("idle");
+          }, 5000);
+
+      } catch (err: any) {
+        setStatus("error");
+        setErrorMessage(typeof err === 'string' && err.includes("is required") ? "Debes ingresar el nombre del restaurante" : err );
       }
     };
 
@@ -167,16 +179,37 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
                     </View>
                 </Modal>
 
+                {status === "error" && errorMessage && (
+                  <Text style={styles.errorText}>
+                    {errorMessage}
+                  </Text>
+                )}
+
+                {status === "success" && (
+                  <Text style={styles.successText}>
+                    Restaurante añadido correctamente ✅
+                  </Text>
+                )}
+
                 <Pressable style={styles.secondaryButton} onPress={handleSelectLocation}>
                     <Text style={styles.buttonText}>Especificar ubicación</Text>
                 </Pressable>
 
-                <Pressable style={styles.primaryButton} onPress={handleAddRestaurant}>
-                    <Text style={styles.buttonText}>Añadir restaurante</Text>
+                <Pressable
+                  style={[
+                    styles.primaryButton,
+                    status === "loading" && { opacity: 0.6 }
+                  ]}
+                  onPress={handleAddRestaurant}
+                  disabled={status === "loading"}
+                >
+                  <Text style={styles.buttonText}>
+                    {status === "loading" ? "Guardando..." : "Añadir restaurante"}
+                  </Text>
                 </Pressable>
 
                 <Pressable style={styles.cancelButton} onPress={clearRestaurant}>
-                    <Text style={styles.buttonText}>Cancelar</Text>
+                    <Text style={styles.buttonText}>Salir</Text>
                 </Pressable>
             </View>
         </Modal>
@@ -400,6 +433,32 @@ const styles = StyleSheet.create({
   picker: {
     color: "#fff",
     height: 200,
+  },
+
+  errorText: {
+    color: "#ffb4b4",
+    backgroundColor: "rgba(255,0,0,0.15)",
+    borderColor: "#ff6b6b",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 6,
+    width: "85%",
+    textAlign: "center",
+    marginBottom: 10,
+    marginTop: 10,
+  },
+
+  successText: {
+    color: "#b4ffcc",
+    backgroundColor: "rgba(0,255,100,0.15)",
+    borderColor: "#4ade80",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 6,
+    width: "85%",
+    textAlign: "center",
+    marginBottom: 10,
+    marginTop: 10,
   },
 
 });

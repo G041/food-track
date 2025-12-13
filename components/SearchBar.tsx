@@ -1,4 +1,4 @@
-
+import { FontAwesome } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -26,6 +26,13 @@ export default function SearchBar<T> ({ itemList, itemFilter, topOffset, extract
         <View style={[styles.overlay, { top: topOffset }]}>
             {/* OVERLAY: búsqueda + lista (lo tuyo) */}
             <View style={styles.searchContainer}>
+                <FontAwesome
+                    name="search"
+                    size={18}
+                    color="#ffffffaa"
+                    style={styles.searchIcon}
+                />
+
                 <TextInput
                     style={styles.inputStyle}
                     placeholderTextColor="#ffffff83"
@@ -74,7 +81,7 @@ const styles = StyleSheet.create({
         width: "100%",
         backgroundColor: "#20a9ff70", // azul profundo
         borderRadius: 12,
-        paddingLeft: 12,
+        paddingLeft: 42,
         paddingRight: 44,
         fontSize: 18,
         marginBottom: 8,
@@ -104,4 +111,11 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
 
+    searchIcon: {
+        position: "absolute",
+        left: 14,
+        top: "43%",
+        transform: [{ translateY: -9 }],
+        zIndex: 1,
+    },
 })
