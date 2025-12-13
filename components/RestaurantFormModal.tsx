@@ -69,7 +69,7 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
           const action = await dispatch(addRestaurantThunk(newRestaurant));
           const result = unwrapResult(action); // optional: throws if rejected
 
-          // console.log("Restaurant added successfully:", result);
+          console.log("Restaurant added successfully:", result);
 
           // reset forms
           clearRestaurant();
@@ -198,7 +198,9 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
                       setShowFormModal(true);
                     }}
                 >
-                    <Text style={{ color: "white" }}>Confirmar ubicación</Text>
+                  <Text style={[styles.buttonText, { paddingHorizontal: 2 }]}>
+                    Confirmar
+                  </Text>
                 </Pressable>
             </View>
         </Modal>
@@ -327,16 +329,13 @@ const styles = StyleSheet.create({
   mapButton: {
     backgroundColor: "#188FD9",
     width: "40%",
-    height: 45,
-    marginTop: 12,
-    justifyContent: "center",
+    height: 40,
     alignItems: "center",
+    justifyContent: "center",
     borderRadius: 8,
-
     position: "absolute",
     bottom: 36,
     alignSelf: "center",
-    padding: 12,
   },
 
   buttonText: {

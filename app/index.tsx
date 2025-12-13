@@ -117,13 +117,7 @@ export default function Map() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ flex: 1 }}>
         {/* MAPA */}
-        {Platform.OS === "ios" ? (
-          <MapViewer
-            region={region}
-            compassPosition={{ x: -10, y: insets.top + 20 }}
-            renderMarkers={restaurantMarkerGenerator}
-          />
-        ) : (
+        {Platform.OS === "web" ? (
           <View style={{ 
             flex: 1, 
             justifyContent: 'center', 
@@ -131,6 +125,12 @@ export default function Map() {
           }}>
             <Text>Sorry, Your platform is currently not supported!</Text>
           </View>
+        ) : (
+          <MapViewer
+            region={region}
+            compassPosition={{ x: -10, y: insets.top + 20 }}
+            renderMarkers={restaurantMarkerGenerator}
+          />
         )}
 
         {/* Search bar */}
