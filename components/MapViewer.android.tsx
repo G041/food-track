@@ -1,9 +1,10 @@
+import { mapStyleNoPOI } from "@/constants/mapStyleNoPOI";
 import { RegionWithAccuracy } from "@/types/region";
 import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import MapView, { Circle, Point } from "react-native-maps";
+import MapView, { Circle, Point, PROVIDER_GOOGLE } from "react-native-maps";
 
 type Props = {
     region: RegionWithAccuracy | null,
@@ -36,13 +37,16 @@ export default function MapViewer({ region, renderMarkers, compassPosition, onMa
     return (
         <View style={{ flex: 1 }}>
             <MapView
+                provider={PROVIDER_GOOGLE}
                 style={styles.map}
                 initialRegion={region}
                 ref={mapRef}
                 showsUserLocation
-                showsPointsOfInterest={false}
-                mapType="mutedStandard"
-                compassOffset={compassPosition}
+                customMapStyle={mapStyleNoPOI}
+                mapType="standard"
+                showsCompass={false}
+                showsMyLocationButton={false}
+                toolbarEnabled={false}
                 onLongPress={onMapLongPress? ((e) => onMapLongPress(e.nativeEvent.coordinate)) : undefined}
             >
 

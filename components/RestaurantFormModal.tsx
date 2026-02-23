@@ -1,12 +1,14 @@
 import { AppDispatch } from "@/store";
 import { addRestaurantThunk } from "@/store/restaurantsSlice";
+import { CATEGORIES } from "@/types/categories";
 import { Picker } from "@react-native-picker/picker";
 import { unwrapResult } from "@reduxjs/toolkit";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Marker, Region } from "react-native-maps";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
-
-import { CATEGORIES } from "@/constants/categories";
+import MapViewer from "./MapViewer";
 
 type Props = {
   visible: boolean;
@@ -15,59 +17,130 @@ type Props = {
   coords?: { latitude: number; longitude: number } | null;
 };
 
+const defaultPosition: Region = {
+  latitude: -34.61,
+  longitude: -58.44,
+  latitudeDelta: 0.1,
+  longitudeDelta: 0.1
+};
+
 export default function RestaurantFormModal({ visible, initialMenuLink, coords, setScanned }: Props) {
     
     const dispatch = useDispatch<AppDispatch>();
 
+    const insets = useSafeAreaInsets();
+
     const [restaurant_name, setRestaurant_name] = useState("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
+    const [pickedCoords, setPickedCoords] = useState<{ latitude: number; longitude: number } | null >(null);
 
     const [showPicker, setShowPicker] = useState(false);
+    const [showMap, setShowMap] = useState(false);
+    const [showFormModal, setShowFormModal] = useState(visible);
+
+    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    //ubicacion default 
+    const [userRegion, setUserRegion] = useState<Region>(defaultPosition);
+
+    useEffect(() => {
+      setShowFormModal(visible);
+    }, [visible]);
 
     function clearRestaurant() {
         setRestaurant_name("");
         setDescription("");
         setLocation("");
+        setPickedCoords(null);
 
         setScanned(false);
     };
 
     const handleAddRestaurant = async () => {
-        const newRestaurant = {
-            restaurant_name: restaurant_name,
-            description: description,
-            menu_link: initialMenuLink,
-            location: location,
-            latitude: coords?.latitude ?? null,
-            longitude: coords?.longitude ?? null,
-        };
+      const finalCoords = pickedCoords ?? coords ?? null;
 
-        try {
-            const action = await dispatch(addRestaurantThunk(newRestaurant));
-            const result = unwrapResult(action); // optional: throws if rejected
+      const newRestaurant = {
+        restaurant_name,
+        description,
+        menu_link: initialMenuLink,
+        location,
+        latitude: finalCoords?.latitude ?? null,
+        longitude: finalCoords?.longitude ?? null,
+      };
 
-            console.log("Restaurant added successfully:", result);
+      try {
+          setStatus("loading");
+          setErrorMessage(null);
 
-            // reset forms
+          const action = await dispatch(addRestaurantThunk(newRestaurant));
+          const result = unwrapResult(action); // optional: throws if rejected
+
+          console.log("Restaurant added successfully:", result);
+          setStatus("success");
+
+          // Cierro luego de 5s 
+          setTimeout(() => {
             clearRestaurant();
-        } catch (err) {
-            console.error("Failed to add restaurant:", err);
-            clearRestaurant();
-        }
+            setShowFormModal(false);
+            setStatus("idle");
+          }, 5000);
+
+      } catch (err: any) {
+        setStatus("error");
+        setErrorMessage(typeof err === 'string' && err.includes("is required") ? "Debes ingresar el nombre del restaurante" : err );
+      }
     };
 
+    const handleSelectLocation = () => {
+      setUserRegion({
+        latitude: coords?.latitude ?? defaultPosition.latitude,
+        longitude: coords?.longitude ?? defaultPosition.longitude,
+        latitudeDelta: defaultPosition.latitudeDelta,
+        longitudeDelta: defaultPosition.longitudeDelta,
+      });
+
+      setShowFormModal(false); // escondo form
+      setShowMap(true);       // mmuestro mapa
+    }
+
+    const renderPickedMarker = () => {
+      return (
+        <>
+          {pickedCoords && (
+            <Marker
+              coordinate={pickedCoords}
+              draggable
+              onDragEnd={(e) =>
+                setPickedCoords(e.nativeEvent.coordinate)
+              }
+            />)}
+        </>
+      )
+    }
+
     return (
-        <Modal transparent={false} visible={visible}>
+      <>
+        <Modal transparent={false} visible={showFormModal}>
             <View style={styles.modalBackground}>
                 <View style={styles.qrPreview}>
                     <Text style={styles.qrText}>{initialMenuLink}</Text>
                 </View>
-
+                <View style={styles.disclaimerPreview}>
+                    <Text style={styles.qrText}>Si no especificas una ubicación, se elegirá tu posición actual por default.</Text>
+                </View>
                 <TextInput
-                    placeholder="Restaurant name..."
+                    placeholder="Nombre del restaurante..."
                     value={restaurant_name}
                     onChangeText={setRestaurant_name}
+                    style={styles.input}
+                    placeholderTextColor="#aaa"
+                />
+                <TextInput
+                    placeholder="Dirección..."
+                    value={location}
+                    onChangeText={setLocation}
                     style={styles.input}
                     placeholderTextColor="#aaa"
                 />
@@ -75,8 +148,8 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
                     onPress={() => setShowPicker(true)}
                     style={styles.input}
                 >
-                    <Text style={{ color: description ? "white" : "#aaa", fontSize: 16 }}>
-                    {description || "Selecciona una categoria..."}
+                    <Text style={{ color: description ? "white" : "#aaa", fontSize: 20 }}>
+                      {description || "Selecciona una categoria..."}
                     </Text>
                 </Pressable>
 
@@ -105,23 +178,74 @@ export default function RestaurantFormModal({ visible, initialMenuLink, coords, 
                     </View>
                     </View>
                 </Modal>
-                <TextInput
-                    placeholder="Location..."
-                    value={location}
-                    onChangeText={setLocation}
-                    style={styles.input}
-                    placeholderTextColor="#aaa"
-                />
 
-                <Pressable style={styles.primaryButton} onPress={handleAddRestaurant}>
-                    <Text style={styles.buttonText}>Add Restaurant</Text>
+                {status === "error" && errorMessage && (
+                  <Text style={styles.errorText}>
+                    {errorMessage}
+                  </Text>
+                )}
+
+                {status === "success" && (
+                  <Text style={styles.successText}>
+                    Restaurante añadido correctamente ✅
+                  </Text>
+                )}
+
+                <Pressable style={styles.secondaryButton} onPress={handleSelectLocation}>
+                    <Text style={styles.buttonText}>Especificar ubicación</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.primaryButton,
+                    status === "loading" && { opacity: 0.6 }
+                  ]}
+                  onPress={handleAddRestaurant}
+                  disabled={status === "loading"}
+                >
+                  <Text style={styles.buttonText}>
+                    {status === "loading" ? "Guardando..." : "Añadir restaurante"}
+                  </Text>
                 </Pressable>
 
                 <Pressable style={styles.cancelButton} onPress={clearRestaurant}>
-                    <Text style={styles.buttonText}>Cancel</Text>
+                    <Text style={styles.buttonText}>Salir</Text>
                 </Pressable>
             </View>
         </Modal>
+        <Modal
+            visible={showMap}
+            animationType="slide"
+            transparent={false}
+        >
+            <View style={{ flex: 1 }}>                
+                <MapViewer 
+                  region={userRegion}
+                  onMapLongPress={setPickedCoords}
+                  renderMarkers={renderPickedMarker}
+                  compassPosition={{ x: -10, y: insets.top }}
+                />
+
+                <View style={[styles.mapOverlay, {top: insets.top}]} pointerEvents="none">
+                  <Text style={styles.overlayText}>
+                    Mantén presionado para seleccionar una ubicación
+                  </Text>
+                </View>
+
+                <Pressable
+                    style={styles.mapButton}
+                    onPress={() => {
+                      setShowMap(false);
+                      setShowFormModal(true);
+                    }}
+                >
+                  <Text style={[styles.buttonText, { paddingHorizontal: 2 }]}>
+                    Confirmar
+                  </Text>
+                </Pressable>
+            </View>
+        </Modal>
+      </>
     );
 }
 
@@ -187,7 +311,13 @@ const styles = StyleSheet.create({
 
   qrText: {
     fontWeight: "bold",
+    textAlign: "center",
     color: "white",
+  },
+
+  disclaimerPreview: {
+    padding: 10,
+    marginBottom: 20,
   },
 
   input: {
@@ -197,7 +327,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     width: "85%",
-    fontSize: 18,
+    height: 50,
+    fontSize: 20,
     marginVertical: 8,
     color: "white",
   },
@@ -205,7 +336,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: "#1EA4D9",
     width: "80%",
-    height: 50,
+    height: 60,
     marginTop: 10,
     justifyContent: "center",
     alignItems: "center",
@@ -216,8 +347,18 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 
+  secondaryButton: {
+    backgroundColor: "#188FD9",
+    width: "80%",
+    height: 50,
+    marginTop: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+  },
+
   cancelButton: {
-    backgroundColor: "#116EBF",
+    backgroundColor: "#ff2f2fff",
     width: "80%",
     height: 45,
     marginTop: 12,
@@ -226,22 +367,52 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
+  mapButton: {
+    backgroundColor: "#188FD9",
+    width: "40%",
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    position: "absolute",
+    bottom: 36,
+    alignSelf: "center",
+  },
+
+  mapOverlay: {
+    left: 15,
+    right: 15,
+    position: "absolute",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+  },
+
+  overlayText: {
+    color: "#fff",
+    fontSize: 15,
+    textAlign: "center",
+    fontWeight: "500",
+  },
+
   buttonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
   },
+
   pickerContainer: {
-  backgroundColor: "#188FD9",
-  borderColor: "#1EA4D9",
-  borderWidth: 1,
-  borderRadius: 8,
-  width: "85%",
-  marginVertical: 8,
-  // para que coincida con el alto del input
-  height: 50,
-  justifyContent: "center",
-},
+    backgroundColor: "#188FD9",
+    borderColor: "#1EA4D9",
+    borderWidth: 1,
+    borderRadius: 8,
+    width: "85%",
+    marginVertical: 8,
+    // para que coincida con el alto del input
+    height: 50,
+    justifyContent: "center",
+  },
 
   modalOverlay: {
     flex: 1,
@@ -249,6 +420,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   pickerModal: {
     backgroundColor: "#188FD9",
     borderRadius: 10,
@@ -257,10 +429,36 @@ const styles = StyleSheet.create({
     width: "85%",
     padding: 10,
   },
+
   picker: {
     color: "#fff",
     height: 200,
   },
 
+  errorText: {
+    color: "#ffb4b4",
+    backgroundColor: "rgba(255,0,0,0.15)",
+    borderColor: "#ff6b6b",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 6,
+    width: "85%",
+    textAlign: "center",
+    marginBottom: 10,
+    marginTop: 10,
+  },
+
+  successText: {
+    color: "#b4ffcc",
+    backgroundColor: "rgba(0,255,100,0.15)",
+    borderColor: "#4ade80",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 6,
+    width: "85%",
+    textAlign: "center",
+    marginBottom: 10,
+    marginTop: 10,
+  },
 
 });
