@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Image, Keyboard, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from "react-native";
+import {
+  Image,
+  Keyboard,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 
 import { Marker } from "react-native-maps";
 
@@ -14,9 +23,7 @@ import { useFetchRestaurants } from "@/hooks/useFetchRestaurants";
 import { useUserRegion } from "@/hooks/useUserRegion";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-
 export default function Map() {
-
   const [selectedCat, setSelectedCat] = useState<Category>("Todos"); // Category igual a: "Todos" | "Merienda" | "Bodegon" | ...
 
   const [menu_link, setMenu_link] = useState<string | null>(null);
@@ -24,16 +31,18 @@ export default function Map() {
   const [currentFiltered, setCurrentFiltered] = useState<Restaurant[]>([]);
 
   const insets = useSafeAreaInsets();
-  
+
   // topOffset ensures the overlay sits below the notch/status bar
   const topOffset = insets.top + 10; // tweak +10 or +12 for spacing
 
   // establezco localizacion de usuario
   const { region } = useUserRegion();
-  // fetch de restaurantes 
+  // fetch de restaurantes
   const { restaurants } = useFetchRestaurants();
 
-  const normalize = (s: string) =>  //otra implementacion del filter
+  const normalize = (
+    s: string, //otra implementacion del filter
+  ) =>
     s
       .toLowerCase()
       .normalize("NFD")
@@ -47,53 +56,60 @@ export default function Map() {
     return normalize(desc) === normalize(selectedCat);
   };
 
-  const restaurantFilter = (restaurantList: Restaurant[], searchedRestaurant: String) => {
-    return restaurantList.filter((r) =>
-      r.restaurant_name
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .includes(
-          searchedRestaurant.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        )
-    )
-    .filter((r) => isCategoryMatch(r.description));
-  }
+  const restaurantFilter = (
+    restaurantList: Restaurant[],
+    searchedRestaurant: String,
+  ) => {
+    return restaurantList
+      .filter((r) =>
+        r.restaurant_name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .includes(
+            searchedRestaurant
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, ""),
+          ),
+      )
+      .filter((r) => isCategoryMatch(r.description));
+  };
 
   const restaurantMarkerGenerator = () => {
     return (
       <>
         {currentFiltered
-            .filter(r => r.latitude != null && r.longitude != null)
-            .map(r => (
-                <Marker
-                    key={r.id_restaurant}
-                    coordinate={{
-                        latitude: r.latitude as number,
-                        longitude: r.longitude as number,
-                    }}
-                    title={r.restaurant_name}
-                    description={r.description}
-                    onPress={() => {
-                        if (selectedMarker === r.id_restaurant) {
-                            // segundo toque → abre el menú
-                            setMenu_link(r.menu_link);
-                            setSelectedMarker(null); // resetea después de abrir
-                        } else {
-                            // primer toque → solo selecciona el marker
-                            setSelectedMarker(r.id_restaurant);
-                        }
-                    }}
-                />)
-            )
-        }
+          .filter((r) => r.latitude != null && r.longitude != null)
+          .map((r) => (
+            <Marker
+              key={r.id_restaurant}
+              coordinate={{
+                latitude: r.latitude as number,
+                longitude: r.longitude as number,
+              }}
+              title={r.restaurant_name}
+              description={r.description}
+              onPress={() => {
+                if (selectedMarker === r.id_restaurant) {
+                  // segundo toque → abre el menú
+                  setMenu_link(r.menu_link);
+                  setSelectedMarker(null); // resetea después de abrir
+                } else {
+                  // primer toque → solo selecciona el marker
+                  setSelectedMarker(r.id_restaurant);
+                }
+              }}
+              onCalloutPress={() => setMenu_link(r.menu_link)}
+            />
+          ))}
       </>
-    )
-  }
+    );
+  };
 
   const extractRestaurantKeyFromItem = (item: Restaurant) => {
-    return (String(item.id_restaurant))
-  }
+    return String(item.id_restaurant);
+  };
 
   const restaurantItemRenderiser = (item: Restaurant) => {
     return (
@@ -101,28 +117,30 @@ export default function Map() {
         style={styles.itemStyles}
         onPress={() => setMenu_link(item.menu_link)}
       >
-          <Image
-              source={require("../assets/images/restaurant_placeholder.png")}
-              style={styles.imageStyles}
-          />
-          <View>
+        <Image
+          source={require("../assets/images/restaurant_placeholder.png")}
+          style={styles.imageStyles}
+        />
+        <View>
           <Text style={styles.textTitle}>{item.restaurant_name}</Text>
           <Text>{item.description}</Text>
-          </View>
+        </View>
       </Pressable>
-    )
-  }
+    );
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ flex: 1 }}>
         {/* MAPA */}
         {Platform.OS === "web" ? (
-          <View style={{ 
-            flex: 1, 
-            justifyContent: 'center', 
-            alignItems: 'center'  
-          }}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             <Text>Sorry, Your platform is currently not supported!</Text>
           </View>
         ) : (
@@ -142,25 +160,18 @@ export default function Map() {
           itemRenderiser={restaurantItemRenderiser}
           onFilteredItemsChange={setCurrentFiltered}
         />
-        
+
         {/* Boton de filtros */}
-        <Filter
-          selectedCat={selectedCat}
-          setSelectedCat={setSelectedCat}
-        />
+        <Filter selectedCat={selectedCat} setSelectedCat={setSelectedCat} />
 
         {/* Display de menu */}
-        <WebViewOverlay
-          url={menu_link}
-          setURL={setMenu_link}
-        />
+        <WebViewOverlay url={menu_link} setURL={setMenu_link} />
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-
   overlay: {
     position: "absolute",
     left: 0,
@@ -183,7 +194,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
-},
+  },
 
   imageStyles: {
     width: 70,
@@ -200,5 +211,4 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 3,
   },
-
 });
